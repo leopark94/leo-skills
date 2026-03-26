@@ -36,7 +36,7 @@ cd ~/utils/leo-skills
 | debugger | opus | 경쟁 가설 패턴으로 체계적 버그 진단 |
 | reviewer | sonnet | 품질/보안/성능 병렬 코드 리뷰 (fork 컨텍스트) |
 
-### 스킬 (5개)
+### 스킬 (6개)
 
 | 스킬 | 설명 |
 |------|------|
@@ -45,6 +45,25 @@ cd ~/utils/leo-skills
 | `/review` | 3-관점 병렬 코드 리뷰 |
 | `/guard` | MASTER.md 준수 확인 체크리스트 |
 | `/progress` | JSON 기반 멀티세션 진행 추적 |
+| `/discover` | GitHub 커뮤니티 스킬 검색 & 설치 |
+
+### 커뮤니티 스킬 레지스트리 (43+ 레포)
+
+`registry/REGISTRY.md`에 43개+ GitHub 레포의 스킬/에이전트/훅 인덱스 보유.
+
+```bash
+# 검색
+./scripts/discover.sh search security
+
+# 인기 레포 목록
+./scripts/discover.sh popular
+
+# 특정 레포에서 설치
+./scripts/discover.sh install trailofbits/skills
+
+# 레지스트리 업데이트
+./scripts/discover.sh update
+```
 
 ## 기반 소스
 
