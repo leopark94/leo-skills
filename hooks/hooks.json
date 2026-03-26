@@ -1,0 +1,77 @@
+{
+  "$schema": "https://code.claude.com/hooks-schema.json",
+  "_comment": "Leo Master Hooks — install.sh가 ~/.claude/settings.json에 병합",
+
+  "SessionStart": [
+    {
+      "matcher": "startup|resume",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/session-checklist.sh"
+        }
+      ]
+    },
+    {
+      "matcher": "compact",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/compact-reinject.sh"
+        }
+      ]
+    }
+  ],
+
+  "PreToolUse": [
+    {
+      "matcher": "Edit|Write",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/detect-secrets.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/protect-files.sh"
+        }
+      ]
+    }
+  ],
+
+  "PostToolUse": [
+    {
+      "matcher": "Edit|Write",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/auto-format.sh"
+        }
+      ]
+    }
+  ],
+
+  "Notification": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/notify.sh"
+        }
+      ]
+    }
+  ],
+
+  "Stop": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/stop-loop-guard.sh"
+        }
+      ]
+    }
+  ]
+}
