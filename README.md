@@ -13,33 +13,16 @@ cd ~/utils/leo-skills
 
 ## 시크릿 관리
 
-macOS Keychain + Apple Passwords 연동. 모든 leo-* 프로젝트에서 공유.
+시크릿은 **leo-cli의 `leo secret`** 커맨드로 관리 (이 프로젝트에 포함되지 않음).
 
 ```bash
-# Keychain에 저장 (모든 프로젝트 공유)
-leo-secret add OPENAI_API_KEY
-
-# Apple Passwords 연동 (iCloud 디바이스 동기화)
-leo-secret add GITHUB_TOKEN --service github.com
-
-# 조회
-leo-secret get OPENAI_API_KEY
-
-# 현재 프로젝트 누락 체크 (.leo-secrets.yaml 기준)
-leo-secret check
-
-# 전체 leo-* 프로젝트 일괄 체크
-leo-secret sync
+leo secret add OPENAI_API_KEY      # Keychain 저장
+leo secret get OPENAI_API_KEY      # 조회
+leo secret check                   # .leo-secrets.yaml 기준 누락 확인
+leo secret sync push               # 크로스 디바이스 동기화
 ```
 
-프로젝트 루트에 `.leo-secrets.yaml` 매니페스트 필요:
-
-```yaml
-secrets:
-  - name: OPENAI_API_KEY
-    description: "OpenAI API 키"
-    required: true
-```
+세션 시작 훅이 `.leo-secrets.yaml` 매니페스트를 자동 체크하여 누락 시 경고.
 
 ## 구성
 

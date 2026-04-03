@@ -87,13 +87,11 @@ for skill_dir in "$SKILLS_ROOT"/skills/*/; do
   fi
 done
 
-# leo secret 커맨드 심링크
-LEO_SECRET="$SKILLS_ROOT/scripts/leo-secret.sh"
-if [[ -f "$LEO_SECRET" ]]; then
-  if [[ ! -L "/usr/local/bin/leo-secret" ]] || [[ "$(readlink /usr/local/bin/leo-secret 2>/dev/null)" != "$LEO_SECRET" ]]; then
-    ln -sf "$LEO_SECRET" /usr/local/bin/leo-secret 2>/dev/null && log_info "leo-secret 커맨드 등록: /usr/local/bin/leo-secret" || \
-    log_warn "leo-secret 심링크 실패 (sudo 필요할 수 있음)"
-  fi
+# leo-cli 존재 확인 (시크릿 관리는 leo-cli 담당)
+if command -v leo &>/dev/null; then
+  log_info "leo-cli 감지됨 — 시크릿 관리: \`leo secret\`"
+else
+  log_warn "leo-cli 미설치 — 시크릿 관리를 위해 leo-cli 설치 권장"
 fi
 
 log_info ""

@@ -41,7 +41,7 @@ PATTERNS=(
 # .env 파일이면 무조건 차단
 if [[ "$FILE_PATH" =~ \.env(\..*)?$ ]] || [[ "$FILE_PATH" =~ \.pem$ ]] || [[ "$FILE_PATH" =~ \.key$ ]]; then
   echo "BLOCKED: 민감 파일 직접 편집 금지 ($FILE_PATH)"
-  echo "→ 환경변수는 'leo secret add <name>' 으로 Keychain에 저장하세요"
+  echo "→ 환경변수는 'leo secret add <name>' 으로 Keychain에 저장 (leo-cli)"
   exit 2
 fi
 
@@ -52,7 +52,7 @@ if [[ -n "$CONTENT" ]]; then
       MATCHED=$(echo "$CONTENT" | grep -oP "$pattern" 2>/dev/null | head -1 || echo "$CONTENT" | grep -oE "$pattern" 2>/dev/null | head -1)
       REDACTED="${MATCHED:0:8}***"
       echo "BLOCKED: 민감정보 탐지됨 — $REDACTED"
-      echo "→ 'leo secret add <name>' 으로 Keychain에 저장 후 환경변수로 참조하세요"
+      echo "→ 'leo secret add <name>' 으로 Keychain에 저장 후 환경변수로 참조 (leo-cli)"
       echo "→ 코드에서는 process.env.XXX 또는 \$XXX 로 사용"
       exit 2
     fi
