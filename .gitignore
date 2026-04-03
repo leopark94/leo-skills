@@ -3,3 +3,5 @@
 .env*
 *.log
 node_modules/
+.claude-needs-review
+.claude-edit-count

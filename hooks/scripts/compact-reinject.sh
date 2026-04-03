@@ -12,5 +12,12 @@ cat <<'CONTEXT'
 5. Git: Conventional Commits. 기능별 버전 업데이트 (SemVer)
 6. 테스트: 변경 후 반드시 빌드 확인 (`npm run build`)
 7. 서비스 포트: leo-bot(3848), leo-secretary(3849), slack(3847)
-8. 팀 작업 시 MASTER.md (/Users/leo/utils/leo-skills/MASTER.md) 참조 확인
+8. MASTER.md (/Users/leo/utils/leo-skills/MASTER.md) 참조 확인
+
+## IMPORTANT: 팀 퍼스트 원칙 (절대 잊지 말 것)
+
+- /sprint, /review, /investigate는 팀 모드가 기본
+- 전문 에이전트(architect, reviewer, type-analyzer, test-analyzer, error-hunter, simplifier, security-auditor)를 상황에 맞게 병렬 스폰
+- 솔로 모드는 --light, --quick, --serial로 명시적 opt-out만 가능
+- 커밋 전 /review 강제 (편집 3회+ 누적 시 마커 자동 생성)
 CONTEXT

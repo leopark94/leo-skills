@@ -36,6 +36,15 @@
           "command": "bash ~/utils/leo-skills/hooks/scripts/protect-files.sh"
         }
       ]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/pre-commit-guard.sh"
+        }
+      ]
     }
   ],
 
@@ -46,6 +55,10 @@
         {
           "type": "command",
           "command": "bash ~/utils/leo-skills/hooks/scripts/auto-format.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/edit-tracker.sh"
         }
       ]
     }

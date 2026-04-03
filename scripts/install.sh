@@ -94,8 +94,8 @@ log_info "========================================="
 log_info ""
 log_info "등록된 훅:"
 for EVENT in $(jq -r '.hooks | keys[]' "$SETTINGS" 2>/dev/null); do
-  COUNT=$(jq -r ".hooks[\"$EVENT\"] | length" "$SETTINGS")
-  log_info "  - $EVENT ($COUNT개)"
+  HOOK_COUNT=$(jq -r ".hooks[\"$EVENT\"] | length" "$SETTINGS")
+  log_info "  - $EVENT (${HOOK_COUNT}개)"
 done
 log_info ""
 log_info "등록된 에이전트:"

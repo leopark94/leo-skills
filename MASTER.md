@@ -62,6 +62,72 @@ Planner → Generator → Evaluator
 - 읽기/탐색 도구는 자동 허용, 쓰기/실행은 확인
 - 샌드박스 + 훅 조합으로 보안 유지
 
+### 1.6 에이전트 팀 패턴 (Agent Team Orchestration)
+
+Claude Code의 Agent tool로 전문 에이전트를 **팀으로 스폰**하여 작업.
+단일 에이전트 대비 더 깊은 분석과 빠른 병렬 처리.
+
+#### 핵심 원칙
+
+| 원칙 | 설명 |
+|------|------|
+| **태스크별 세분화** | 에이전트를 프로젝트가 아닌 역할(타입분석, 보안감사 등)로 세분화 |
+| **병렬 스폰** | 독립적인 에이전트는 하나의 메시지에서 동시 스폰 |
+| **백그라운드 실행** | `run_in_background: true`로 메인 작업 차단 방지 |
+| **격리 컨텍스트** | 분석 에이전트는 `context: fork`로 메인 컨텍스트 오염 방지 |
+| **Named Agent** | `name` 파라미터로 이름 부여, `SendMessage`로 추가 대화 가능 |
+| **결과 통합** | 오케스트레이터(스킬)가 모든 에이전트 결과를 수집하여 통합 보고 |
+
+#### 에이전트 분류
+
+| 역할 | 에이전트 | 모델 | 컨텍스트 | 용도 |
+|------|----------|------|----------|------|
+| 설계 | architect | opus | full | 아키텍처 블루프린트 |
+| 계획 | planner | opus | full | 스프린트 분해 |
+| 탐색 | explorer | sonnet | fork | 코드베이스 구조 파악 |
+| 평가 | evaluator | opus | full | 라이브 테스트 |
+| 디버깅 | debugger | opus | full | 경쟁 가설 진단 |
+| 품질 | reviewer | sonnet | fork | 코드 품질 리뷰 |
+| 타입 | type-analyzer | sonnet | fork | 타입 설계 분석 |
+| 테스트 | test-analyzer | sonnet | fork | 테스트 커버리지 |
+| 에러 | error-hunter | sonnet | fork | 사일런트 에러 탐지 |
+| 단순화 | simplifier | sonnet | fork | 코드 단순화 제안 |
+| 보안 | security-auditor | opus | full | OWASP 보안 감사 |
+
+#### 팀 오케스트레이터 스킬
+
+| 스킬 | 팀 구성 | 패턴 |
+|------|---------|------|
+| `/team-review` | reviewer + type-analyzer + test-analyzer + error-hunter + security-auditor | 5개 병렬 |
+| `/team-feature` | architect → explorer → (구현) → [4개 병렬 검증] → simplifier | 순차+병렬 |
+| `/team-debug` | explorer → (가설수립) → [5개 병렬 검증] → (수정) | 순차+병렬 |
+
+#### 스폰 전략
+
+```
+병렬 스폰 (독립적 분석):
+  - 모든 에이전트를 하나의 메시지에서 Agent tool 동시 호출
+  - run_in_background: true
+  - 결과 수집 후 통합
+
+순차 스폰 (의존적 단계):
+  - 이전 에이전트 결과를 다음 에이전트 프롬프트에 포함
+  - 사용자 승인 게이트 삽입 가능
+
+하이브리드 (팀 스킬):
+  - Phase 1-2 순차 (설계/탐색)
+  - Phase 3-4 병렬 (검증)
+  - Phase 5 순차 (정리)
+```
+
+#### 프로액티브 트리거 패턴
+
+특정 에이전트는 요청 없어도 자동 실행 권장:
+- 코드 작성 완료 후 → **simplifier** (단순화 기회)
+- PR 생성 전 → **team-review** (팀 리뷰)
+- 에러 핸들링 코드 수정 후 → **error-hunter** (사일런트 에러)
+- 새 타입 도입 시 → **type-analyzer** (타입 설계)
+
 ---
 
 ## 2. 세션 관리 베스트프랙티스
