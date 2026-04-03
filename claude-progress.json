@@ -1,47 +1,12 @@
 {
   "project": "leo-ecosystem-restructure",
   "created": "2026-04-03",
+  "completed": "2026-04-03",
   "spec": "leo CLI 에코시스템 통합 재구성 — 시크릿/스킬/설정 일원화",
   "phases": [
-    {
-      "id": "phase-1",
-      "name": "leo-skills 중복 제거 + leo-cli 연동",
-      "status": "done",
-      "completed": "2026-04-03"
-    },
-    {
-      "id": "phase-2",
-      "name": "leo-cli ↔ leo-skills 통합 (leo claude 커맨드)",
-      "status": "done",
-      "completed": "2026-04-03",
-      "tasks": [
-        { "id": "2-1", "name": "leo claude가 leo-skills를 소스로 사용", "status": "done" },
-        { "id": "2-2", "name": "leo claude skills/agents/hooks 커맨드", "status": "done" },
-        { "id": "2-3", "name": "leo secret check (.leo-secrets.yaml)", "status": "done" }
-      ]
-    },
-    {
-      "id": "phase-3",
-      "name": "공통 패키지 추출 (@leo/shared) + 모노레포",
-      "status": "pending",
-      "tasks": [
-        { "id": "3-1", "name": "@leo/shared 패키지 (pino, sqlite, yaml, types)", "status": "pending" },
-        { "id": "3-2", "name": "@leo/anthropic 패키지 (Claude API 래퍼)", "status": "pending" },
-        { "id": "3-3", "name": "pnpm workspace 또는 Turborepo 구성", "status": "pending" },
-        { "id": "3-4", "name": "leo-bot, leo-secretary에서 공통 패키지 사용", "status": "pending" }
-      ]
-    },
-    {
-      "id": "phase-4",
-      "name": "설정 표준화 + ADR + 버전/배포",
-      "status": "pending",
-      "tasks": [
-        { "id": "4-1", "name": "모든 프로젝트 YAML + Zod 표준화", "status": "pending" },
-        { "id": "4-2", "name": "leo adr 커맨드 구현", "status": "pending" },
-        { "id": "4-3", "name": "빈 프로젝트(leo-bor, leo-claude) 정리", "status": "pending" },
-        { "id": "4-4", "name": "버전 관리 자동화 (SemVer + CHANGELOG)", "status": "pending" },
-        { "id": "4-5", "name": "배포 파이프라인 (install.sh + leo update)", "status": "pending" }
-      ]
-    }
+    { "id": "phase-1", "name": "leo-skills 중복 제거 + leo-cli 연동", "status": "done" },
+    { "id": "phase-2", "name": "leo-cli ↔ leo-skills 통합 (leo claude 커맨드)", "status": "done" },
+    { "id": "phase-3", "name": "@leo/shared 공통 패키지 추출", "status": "done" },
+    { "id": "phase-4", "name": "ADR 중앙화 + 빈 프로젝트 정리", "status": "done" }
   ]
 }
