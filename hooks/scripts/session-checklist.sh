@@ -44,8 +44,9 @@ if command -v leo &>/dev/null; then
       [[ -z "$SECRET_NAME" ]] && continue
       REQUIRED=$(grep -A2 "name: *${SECRET_NAME}" "$MANIFEST" | grep "required:" | grep -q "true" && echo "true" || echo "false")
       if [[ "$REQUIRED" == "true" ]]; then
-        # leo-cli Keychain 스키마: service="leo-cli", account="leo-cli-{KEY}"
-        if ! security find-generic-password -s "leo-cli" -a "leo-cli-${SECRET_NAME}" -w >/dev/null 2>&1; then
+        # leo-cli Keychain: internet-password (Apple Passwords) 또는 generic 폴백
+        if ! security find-internet-password -s "leo-cli" -a "${SECRET_NAME}" -w >/dev/null 2>&1 && \
+           ! security find-generic-password -s "leo-cli" -a "leo-cli-${SECRET_NAME}" -w >/dev/null 2>&1; then
           MISSING=$((MISSING + 1))
         fi
       fi
