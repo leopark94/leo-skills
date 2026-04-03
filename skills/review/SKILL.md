@@ -1,56 +1,56 @@
 ---
 name: review
-description: "변경사항 규모에 따라 단일 리뷰 또는 전문 에이전트 팀 리뷰를 자동 선택"
+description: "Auto-selects single review or specialist agent team review based on change scope"
 disable-model-invocation: false
 user-invocable: true
 ---
 
-# /review — 코드 리뷰 (자동 팀 확장)
+# /review — Code Review (Automatic Team Scaling)
 
-변경사항 규모와 성격을 분석하여 **자동으로 리뷰 깊이를 결정**.
+Analyzes change scope and nature to **automatically determine review depth**.
 
-## 사용법
+## Usage
 
 ```
-/review                    # staged + unstaged 리뷰
-/review <file>             # 특정 파일 리뷰
-/review --pr <n>           # PR 리뷰
-/review --deep             # 강제 팀 리뷰
-/review --quick            # 강제 단일 리뷰
+/review                    # review staged + unstaged changes
+/review <file>             # review specific file
+/review --pr <n>           # review a PR
+/review --deep             # force team review
+/review --quick            # force single review
 ```
 
-## Step 0: 모드 결정
+## Step 0: Mode Selection
 
-**기본값은 STANDARD (팀 모드).** 솔로로 하려면 명시적 opt-out 필요.
+**Default is STANDARD (team mode).** Solo requires explicit opt-out.
 
 ```bash
-# 변경 규모 파악
+# Determine change scope
 git diff --stat
 git diff --numstat
 ```
 
-### STANDARD 모드 [기본값]
-→ reviewer + 상황별 전문 에이전트 선택 스폰 (최소 2개)
+### STANDARD Mode [default]
+-> reviewer + context-appropriate specialist agents (minimum 2)
 
-### DEEP 모드 (자동 승격 또는 --deep)
-자동 승격 조건:
-- 변경 파일 10개 초과
-- 변경 라인 500줄 초과
-- 인증/보안/결제 관련 파일 포함
+### DEEP Mode (auto-escalation or --deep)
+Auto-escalation conditions:
+- Changed files > 10
+- Changed lines > 500
+- Auth/security/payment files included
 
-→ 5개 전문 에이전트 전체 병렬 스폰
+-> All 5 specialist agents spawned in parallel
 
-### QUICK 모드 (--quick 명시 시에만)
-→ 메인 컨텍스트에서 직접 리뷰 (에이전트 스폰 없음)
+### QUICK Mode (--quick flag only)
+-> Direct review in main context (no agent spawning)
 
-**QUICK은 사용자가 `/review --quick`으로 명시한 경우에만.** 그 외 모든 경우 STANDARD 이상.
+**QUICK is only used when the user explicitly passes `/review --quick`.** All other cases use STANDARD or higher.
 
-## QUICK 모드 실행
+## QUICK Mode Execution
 
-에이전트 스폰 없이 메인 컨텍스트에서 직접:
+No agent spawning — direct review in main context:
 
 ```markdown
-## 리뷰 결과
+## Review Results
 
 ### Must Fix
 - ...
@@ -61,117 +61,117 @@ git diff --numstat
 ### Nit
 - ...
 
-### 잘된 부분
+### Well Done
 - ...
 
-### 판정: APPROVE / REQUEST CHANGES
+### Verdict: APPROVE / REQUEST CHANGES
 ```
 
-## STANDARD 모드 실행
+## STANDARD Mode Execution
 
-변경사항 성격에 따라 **필요한 에이전트만 선택적 스폰**:
+Selectively spawn agents based on change characteristics:
 
 ```
-항상 스폰:
+Always spawn:
   Agent(name: "review-quality", run_in_background: true)
-    → reviewer: 코드 품질 + leo-* 규칙
+    -> reviewer: code quality + project rules
 
-조건부 스폰:
-  새 타입/인터페이스 있으면:
+Conditional spawns:
+  New types/interfaces detected:
     Agent(name: "review-types", run_in_background: true)
-      → type-analyzer: 타입 설계 분석
+      -> type-analyzer: type design analysis
 
-  try-catch/에러 핸들링 변경 있으면:
+  try-catch/error handling changes detected:
     Agent(name: "review-errors", run_in_background: true)
-      → error-hunter: 사일런트 에러 탐지
+      -> error-hunter: silent error detection
 
-  테스트 파일 미포함인데 소스 변경 있으면:
+  Source changes without test files included:
     Agent(name: "review-tests", run_in_background: true)
-      → test-analyzer: 테스트 커버리지 분석
+      -> test-analyzer: test coverage analysis
 ```
 
-선택된 에이전트를 **하나의 메시지에서 동시 스폰**.
+Spawn selected agents **in a single message**.
 
-결과 통합:
+Results integration:
 ```markdown
-## 리뷰 결과 (STANDARD — {N}개 에이전트)
+## Review Results (STANDARD — {N} agents)
 
-### 투입 에이전트
-- [x] reviewer (코드 품질)
-- [x] type-analyzer (타입 설계) ← 새 인터페이스 감지
-- [ ] error-hunter — 해당 없음
-- [ ] test-analyzer — 테스트 포함됨
+### Deployed Agents
+- [x] reviewer (code quality)
+- [x] type-analyzer (type design) <- new interface detected
+- [ ] error-hunter — not applicable
+- [ ] test-analyzer — tests included
 
 ### Must Fix
-{통합 Critical 이슈}
+{Integrated critical issues}
 
 ### Should Fix
-{통합 Warning 이슈}
+{Integrated warning issues}
 
 ### Nit
-{통합}
+{Integrated}
 
-### 잘된 부분
-{통합}
+### Well Done
+{Integrated}
 
-### 판정: APPROVE / REQUEST CHANGES
+### Verdict: APPROVE / REQUEST CHANGES
 ```
 
-## DEEP 모드 실행
+## DEEP Mode Execution
 
-5개 에이전트 전체 병렬 스폰:
+All 5 agents spawned in parallel:
 
 ```
-Agent(name: "review-quality", run_in_background: true)    → reviewer
-Agent(name: "review-types", run_in_background: true)      → type-analyzer
-Agent(name: "review-tests", run_in_background: true)      → test-analyzer
-Agent(name: "review-errors", run_in_background: true)     → error-hunter
-Agent(name: "review-security", run_in_background: true)   → security-auditor
+Agent(name: "review-quality", run_in_background: true)    -> reviewer
+Agent(name: "review-types", run_in_background: true)      -> type-analyzer
+Agent(name: "review-tests", run_in_background: true)      -> test-analyzer
+Agent(name: "review-errors", run_in_background: true)     -> error-hunter
+Agent(name: "review-security", run_in_background: true)   -> security-auditor
 ```
 
-5개를 **하나의 메시지에서 동시 스폰**.
+All 5 **spawned in a single message**.
 
-결과 통합:
+Results integration:
 ```markdown
-## 리뷰 결과 (DEEP — 5개 에이전트)
+## Review Results (DEEP — 5 agents)
 
-### 참여 에이전트
-- [x] reviewer: 완료
-- [x] type-analyzer: 완료
-- [x] test-analyzer: 완료
-- [x] error-hunter: 완료
-- [x] security-auditor: 완료
+### Participating Agents
+- [x] reviewer: complete
+- [x] type-analyzer: complete
+- [x] test-analyzer: complete
+- [x] error-hunter: complete
+- [x] security-auditor: complete
 
 ### Critical (Must Fix)
-{모든 에이전트 Critical 통합, 중복 제거}
+{All agent critical issues merged, duplicates removed}
 
 ### High (Should Fix)
-{통합}
+{Merged}
 
 ### Medium (Nit)
-{통합}
+{Merged}
 
-### 잘된 부분
-{통합}
+### Well Done
+{Merged}
 
-### 판정: APPROVE / REQUEST CHANGES
-- Critical 1개 이상 → REQUEST CHANGES
+### Verdict: APPROVE / REQUEST CHANGES
+- 1+ Critical -> REQUEST CHANGES
 ```
 
-## 리뷰 완료 후: 마커 정리
+## Post-Review: Marker Cleanup
 
-리뷰가 끝나면 반드시 다음 명령을 실행하여 커밋 차단 마커를 제거:
+After review completes, always run this command to remove the commit-blocking markers:
 
 ```bash
 rm -f .claude-needs-review .claude-edit-count
 ```
 
-이 마커가 남아있으면 pre-commit-guard 훅이 git commit을 차단함.
+If these markers remain, the pre-commit-guard hook will block `git commit`.
 
-## 규칙
+## Rules
 
-- 모드 판단 결과를 사용자에게 **먼저 한 줄로 알림** ("STANDARD 모드 (변경 8파일/320줄, 새 타입 감지)")
-- 에이전트 결과 통합 시 **중복 이슈 제거**
-- QUICK에서도 보안 키워드(auth, token, password, secret, permission) 감지 시 → STANDARD로 자동 승격
-- 사용자가 `--deep`/`--quick` 으로 강제 지정 가능
-- **리뷰 완료 후 반드시 `.claude-needs-review`, `.claude-edit-count` 마커 파일 삭제**
+- Announce mode decision to user **in one line** ("STANDARD mode (8 files/320 lines changed, new types detected)")
+- **Remove duplicate issues** when merging agent results
+- QUICK mode auto-escalates to STANDARD if security keywords detected (auth, token, password, secret, permission)
+- User can force mode with `--deep`/`--quick` flags
+- **After review, always delete `.claude-needs-review` and `.claude-edit-count` marker files**

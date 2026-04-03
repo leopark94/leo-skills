@@ -1,6 +1,6 @@
 #!/bin/zsh
-# auto-format.sh — PostToolUse 훅: 파일 편집 후 자동 포맷팅
-# prettier, eslint --fix, black 등 프로젝트에 맞는 포맷터 실행
+# auto-format.sh — PostToolUse hook: auto-format files after editing
+# Runs project-appropriate formatter (prettier, eslint --fix, black, etc.)
 
 set -euo pipefail
 
@@ -8,7 +8,7 @@ INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# Edit/Write만 대상
+# Only target Edit/Write
 if [[ "$TOOL_NAME" != "Write" && "$TOOL_NAME" != "Edit" ]]; then
   exit 0
 fi
@@ -16,15 +16,15 @@ fi
 [[ -z "$FILE_PATH" ]] && exit 0
 [[ ! -f "$FILE_PATH" ]] && exit 0
 
-# 파일 확장자 확인
+# Get file extension
 EXT="${FILE_PATH##*.}"
 
-# 프로젝트 루트 찾기
+# Find project root
 PROJECT_ROOT=$(cd "$(dirname "$FILE_PATH")" && git rev-parse --show-toplevel 2>/dev/null || echo "")
 
 case "$EXT" in
   ts|tsx|js|jsx|json|css|scss|html|md|yaml|yml)
-    # prettier 존재 시 실행
+    # Run prettier if available
     if [[ -n "$PROJECT_ROOT" ]] && [[ -f "$PROJECT_ROOT/node_modules/.bin/prettier" ]]; then
       "$PROJECT_ROOT/node_modules/.bin/prettier" --write "$FILE_PATH" 2>/dev/null || true
     elif command -v prettier &>/dev/null; then

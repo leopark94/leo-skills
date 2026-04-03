@@ -1,6 +1,6 @@
 #!/bin/zsh
-# sync.sh — Leo Master Skills 동기화
-# git pull 후 install.sh 재실행
+# sync.sh — Leo Master Skills synchronization
+# Pulls latest from git then re-runs install.sh
 
 set -euo pipefail
 
@@ -13,14 +13,14 @@ log_info() { echo "${GREEN}[leo-skills]${NC} $1"; }
 
 cd "$SKILLS_ROOT"
 
-# git pull (레포가 있으면)
+# git pull (if repo exists)
 if [[ -d .git ]]; then
-  log_info "최신 버전 가져오는 중..."
-  git pull --rebase 2>/dev/null || log_info "git pull 스킵 (오프라인 또는 권한 문제)"
+  log_info "Fetching latest version..."
+  git pull --rebase 2>/dev/null || log_info "git pull skipped (offline or permission issue)"
 fi
 
-# 재설치
-log_info "설정 동기화 중..."
+# Re-install
+log_info "Syncing configuration..."
 "$SCRIPT_DIR/install.sh"
 
-log_info "동기화 완료!"
+log_info "Sync complete!"

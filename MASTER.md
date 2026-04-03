@@ -1,361 +1,367 @@
 # Leo Master Reference
 
-> Anthropic Engineering 블로그 전체 + 커뮤니티 베스트프랙티스 + leo-* 프로젝트 패턴 통합.
-> 모든 leo-* 프로젝트에서 Claude Code 사용 시 이 문서를 기반으로 작업해야 함.
-> 최종 업데이트: 2026-03-26
+> Comprehensive integration of Anthropic Engineering blog patterns + community best practices + leo-* project conventions.
+> All leo-* projects use this document as the foundation for Claude Code work.
+> Last updated: 2026-04-03
 
 ---
 
-## 1. 아키텍처 패턴 (Anthropic Engineering)
+## 1. Architecture Patterns (Anthropic Engineering)
 
-### 1.1 워크플로우 패턴 ("Building Effective Agents")
+### 1.1 Workflow Patterns ("Building Effective Agents")
 
-| 패턴 | 설명 | 사용 시점 |
-|------|------|-----------|
-| **Prompt Chaining** | 순차적 LLM 호출, 중간 게이트 검증 | 정확도 > 속도, 고정된 서브태스크 |
-| **Routing** | 입력 분류 → 전문 하위 작업 분기 | 다양한 입력 유형 처리 |
-| **Parallelization** | 동시 LLM 호출 → 결과 집계 | 독립적 서브태스크, 다양한 관점 필요 |
-| **Orchestrator-Workers** | 중앙 LLM이 동적으로 하위 작업 분배 | 예측 불가능한 태스크 분해 |
-| **Evaluator-Optimizer** | 생성 ↔ 평가 반복 루프 | 피드백으로 개선 가능한 작업 |
+| Pattern | Description | When to Use |
+|---------|-------------|-------------|
+| **Prompt Chaining** | Sequential LLM calls with intermediate gate verification | Accuracy > speed, fixed subtasks |
+| **Routing** | Input classification -> specialized subtask branching | Diverse input types |
+| **Parallelization** | Concurrent LLM calls -> result aggregation | Independent subtasks, multiple perspectives needed |
+| **Orchestrator-Workers** | Central LLM dynamically assigns subtasks | Unpredictable task decomposition |
+| **Evaluator-Optimizer** | Generate <-> evaluate iteration loop | Tasks improvable via feedback |
 
-### 1.2 삼중 에이전트 하네스 ("Harness Design for Long-Running Apps")
+### 1.2 Triple-Agent Harness ("Harness Design for Long-Running Apps")
 
 ```
-Planner → Generator → Evaluator
-  │          │            │
-  │          │            └─ Playwright로 라이브 앱 테스트
-  │          └─ 스프린트 단위 구현
-  └─ 1-4문장 → 상세 스펙 변환
+Planner -> Generator -> Evaluator
+  |          |            |
+  |          |            +- Live app testing via Playwright
+  |          +- Sprint-based implementation
+  +- 1-4 sentences -> detailed spec conversion
 ```
 
-**스프린트 계약 패턴**: 각 스프린트 전 Generator-Evaluator가 테스트 가능한 성공 기준 협상.
+**Sprint Contract Pattern**: Before each sprint, Generator-Evaluator negotiate testable success criteria.
 
-**핵심 교훈**:
-- AI는 자기 작업을 과대평가함 → 반드시 별도 Evaluator 분리
-- 컨텍스트 불안 (Context Anxiety): 컨텍스트 윈도우가 차면 성급하게 작업 마무리
-- 모델 업데이트마다 하네스 재검토 필요
-- **가장 단순한 해결책부터 시작, 필요할 때만 복잡도 추가**
+**Key Lessons**:
+- AI overestimates its own work -> always separate the Evaluator
+- Context Anxiety: model rushes to finish when context window fills
+- Harness needs review after each model update
+- **Start with simplest solution, add complexity only when needed**
 
-### 1.3 컨텍스트 엔지니어링 ("Effective Context Engineering")
+### 1.3 Context Engineering ("Effective Context Engineering")
 
-**컨텍스트 윈도우 = 유한 자원**. 모든 토큰은 주의력 예산(attention budget) 소모.
+**Context window = finite resource**. Every token consumes attention budget.
 
-| 전략 | 설명 |
-|------|------|
-| Just-in-Time 로딩 | 경로/URL만 유지, 런타임에 동적 로드 |
-| Progressive Disclosure | 점진적 탐색으로 컨텍스트 발견 |
-| Compaction | 대화 이력 요약 압축, 아키텍처 결정/미해결 버그 보존 |
-| 구조화된 노트테이킹 | 파일 기반 메모리로 컨텍스트 윈도우 밖에 정보 저장 |
-| Sub-Agent 분리 | 전문 서브에이전트에 깨끗한 컨텍스트로 위임, 1000-2000 토큰 요약 반환 |
+| Strategy | Description |
+|----------|-------------|
+| Just-in-Time Loading | Keep only paths/URLs, dynamically load at runtime |
+| Progressive Disclosure | Discover context through incremental exploration |
+| Compaction | Summarize conversation history, preserve architecture decisions + unresolved bugs |
+| Structured Note-Taking | File-based memory to store information outside context window |
+| Sub-Agent Isolation | Delegate to specialist sub-agents with clean context, return 1000-2000 token summaries |
 
-### 1.4 멀티에이전트 시스템 ("Multi-Agent Research System", "Building a C Compiler")
+### 1.4 Multi-Agent Systems ("Multi-Agent Research System", "Building a C Compiler")
 
-- **Lead + 3-5 Teammates** 최적 (더 많으면 토큰 낭비)
-- 에이전트당 **5-6 태스크** 단위로 배치
-- **파일 충돌 회피**: 도메인별 에이전트 격리 (프론트엔드/백엔드/테스트)
-- **읽기 전용부터 시작**: 조사/리서치 먼저, 쓰기 작업은 나중에
-- **경쟁 가설**: 디버깅 시 5개 가설 = 5개 에이전트 독립 조사
+- **Lead + 3-5 Teammates** is optimal (more = token waste)
+- **5-6 tasks** per agent batch
+- **File conflict avoidance**: isolate agents by domain (frontend/backend/tests)
+- **Start read-only**: research/investigation first, writing later
+- **Competing hypotheses**: 5 hypotheses = 5 agents investigating independently
 
 ### 1.5 Auto Mode ("Claude Code Auto Mode")
 
-- 안전하게 권한 스킵하는 방법
-- 읽기/탐색 도구는 자동 허용, 쓰기/실행은 확인
-- 샌드박스 + 훅 조합으로 보안 유지
+- Safe permission skipping methods
+- Auto-allow read/explore tools, confirm write/execute
+- Security maintained via sandbox + hooks combination
 
-### 1.6 아키텍처 원칙 (TDD + DDD + CA + CQRS)
+### 1.6 Architecture Principles (TDD + DDD + CA + CQRS)
 
-모든 프로젝트에 기본 적용하되, **규모에 맞게 수준 조절**.
+Applied to all projects by default, **scaled to project size**.
 
 #### TDD (Test-Driven Development)
-- Red → Green → Refactor 사이클
-- 테스트가 설계를 이끔 — 블루프린트에 테스트 시나리오 필수 포함
+- Red -> Green -> Refactor cycle
+- Tests drive design — blueprint must include test scenarios
 
 #### DDD (Domain-Driven Design)
 - Entity, Value Object, Aggregate, Domain Service, Repository Interface
-- 유비쿼터스 언어: 코드 네이밍 = 도메인 용어
-- Bounded Context로 모듈/서비스 경계 정의
+- Ubiquitous Language: code naming = domain terminology
+- Bounded Context defines module/service boundaries
 
 #### Clean Architecture
-- 의존성 방향: Domain ← Application ← Infrastructure ← Presentation
-- 내부 레이어는 외부를 모름 — 의존성 역전 원칙
-- 프레임워크 독립: 도메인에 프레임워크 의존 금지
+- Dependency direction: Domain <- Application <- Infrastructure <- Presentation
+- Inner layers know nothing about outer layers — Dependency Inversion Principle
+- Framework independence: no framework dependencies in domain
 
 #### CQRS
-- Command(쓰기)와 Query(읽기) Handler 분리
-- 규모별: 소규모=Handler분리, 중규모=모델분리, 대규모=이벤트소싱
+- Separate Command (write) and Query (read) Handlers
+- By scale: Small=Handler split, Medium=Model split, Large=Event sourcing
 
-#### 규모별 적용
+#### Scale-Based Application
 
-| 규모 | DDD | CQRS | CA | 모노레포 |
-|------|-----|------|-----|---------|
-| 소규모 | Entity/VO | Handler분리 | Feature-based | 불필요 |
-| 중규모 | Aggregate+Repo | 읽기/쓰기분리 | Layered | 고려 |
-| 대규모 | Bounded Context | 이벤트기반 | 풀 CA | Turborepo/Nx |
+| Scale | DDD | CQRS | CA | Monorepo |
+|-------|-----|------|----|----------|
+| Small | Entity/VO | Handler split | Feature-based | Not needed |
+| Medium | Aggregate+Repo | Read/write split | Layered | Consider |
+| Large | Bounded Context | Event-driven | Full CA | Turborepo/Nx |
 
-#### ADR (Architecture Decision Record) — 필수
+#### ADR (Architecture Decision Record) — mandatory
 
-모든 아키텍처 결정은 `docs/adr/NNNN-{title}.md`에 기록.
-Architect 에이전트가 자동 생성. 형식:
-
-```
-# ADR-NNNN: {제목}
-- 상태: accepted | proposed | deprecated
-- 날짜: YYYY-MM-DD
-## 컨텍스트 / 결정 / 선택지 / 결과
-```
-
-### 1.7 에이전트 팀 패턴 (Agent Team Orchestration)
-
-Claude Code의 Agent tool로 전문 에이전트를 **팀으로 스폰**하여 작업.
-단일 에이전트 대비 더 깊은 분석과 빠른 병렬 처리.
-
-#### 핵심 원칙
-
-| 원칙 | 설명 |
-|------|------|
-| **태스크별 세분화** | 에이전트를 프로젝트가 아닌 역할(타입분석, 보안감사 등)로 세분화 |
-| **병렬 스폰** | 독립적인 에이전트는 하나의 메시지에서 동시 스폰 |
-| **백그라운드 실행** | `run_in_background: true`로 메인 작업 차단 방지 |
-| **격리 컨텍스트** | 분석 에이전트는 `context: fork`로 메인 컨텍스트 오염 방지 |
-| **Named Agent** | `name` 파라미터로 이름 부여, `SendMessage`로 추가 대화 가능 |
-| **결과 통합** | 오케스트레이터(스킬)가 모든 에이전트 결과를 수집하여 통합 보고 |
-
-#### 에이전트 분류
-
-| 역할 | 에이전트 | 모델 | 컨텍스트 | 용도 |
-|------|----------|------|----------|------|
-| 설계 | architect | opus | full | 아키텍처 블루프린트 |
-| 계획 | planner | opus | full | 스프린트 분해 |
-| 탐색 | explorer | sonnet | fork | 코드베이스 구조 파악 |
-| 평가 | evaluator | opus | full | 라이브 테스트 |
-| 디버깅 | debugger | opus | full | 경쟁 가설 진단 |
-| 품질 | reviewer | sonnet | fork | 코드 품질 리뷰 |
-| 타입 | type-analyzer | sonnet | fork | 타입 설계 분석 |
-| 테스트 | test-analyzer | sonnet | fork | 테스트 커버리지 |
-| 에러 | error-hunter | sonnet | fork | 사일런트 에러 탐지 |
-| 단순화 | simplifier | sonnet | fork | 코드 단순화 제안 |
-| 보안 | security-auditor | opus | full | OWASP 보안 감사 |
-
-#### 팀 오케스트레이터 스킬
-
-| 스킬 | 팀 구성 | 패턴 |
-|------|---------|------|
-| `/team-review` | reviewer + type-analyzer + test-analyzer + error-hunter + security-auditor | 5개 병렬 |
-| `/team-feature` | architect → explorer → (구현) → [4개 병렬 검증] → simplifier | 순차+병렬 |
-| `/team-debug` | explorer → (가설수립) → [5개 병렬 검증] → (수정) | 순차+병렬 |
-
-#### 스폰 전략
+All architecture decisions recorded in `docs/adr/NNNN-{title}.md`.
+Architect agent auto-generates. Format:
 
 ```
-병렬 스폰 (독립적 분석):
-  - 모든 에이전트를 하나의 메시지에서 Agent tool 동시 호출
+# ADR-NNNN: {Title}
+- Status: accepted | proposed | deprecated
+- Date: YYYY-MM-DD
+## Context / Decision / Alternatives / Consequences
+```
+
+### 1.7 Agent Team Patterns (Agent Team Orchestration)
+
+Spawn specialist agents as **teams** via Claude Code's Agent tool.
+Deeper analysis and faster parallel processing than single-agent approaches.
+
+#### Core Principles
+
+| Principle | Description |
+|-----------|-------------|
+| **Role-Based Specialization** | Agents segmented by role (type analysis, security audit, etc.), not project |
+| **Parallel Spawning** | Independent agents spawned simultaneously in a single message |
+| **Background Execution** | `run_in_background: true` prevents blocking main work |
+| **Context Isolation** | Analysis agents use `context: fork` to prevent main context pollution |
+| **Named Agents** | `name` parameter enables `SendMessage` for follow-up communication |
+| **Result Integration** | Orchestrator (skill) collects all agent results into unified report |
+
+#### Agent Classification
+
+| Role | Agent | Model | Context | Purpose |
+|------|-------|-------|---------|---------|
+| Design | architect | opus | full | Architecture blueprint |
+| Planning | planner | opus | full | Sprint decomposition |
+| Project Mgmt | pm | opus | full | Priority/scope/risk management |
+| Exploration | explorer | sonnet | fork | Codebase structure mapping |
+| Evaluation | evaluator | opus | full | Live testing |
+| Debugging | debugger | opus | full | Competing hypothesis diagnosis |
+| Code Quality | reviewer | sonnet | fork | Code quality review |
+| Type Design | type-analyzer | sonnet | fork | Type design analysis |
+| Test Coverage | test-analyzer | sonnet | fork | Test coverage analysis |
+| Error Hunting | error-hunter | sonnet | fork | Silent error detection |
+| Simplification | simplifier | sonnet | fork | Code simplification suggestions |
+| Security | security-auditor | opus | full | OWASP security audit |
+| TDD Red Phase | test-writer | opus | full | Write failing tests before implementation |
+| Implementation | developer | opus | full | Production code implementation |
+| Release | release-coordinator | sonnet | full | Automated release process |
+| Incident | incident-commander | opus | full | Production incident response |
+| Performance | perf-monitor | sonnet | fork | Performance profiling |
+
+#### Team Orchestrator Skills
+
+| Skill | Team Composition | Pattern |
+|-------|-----------------|---------|
+| `/team-review` | reviewer + type-analyzer + test-analyzer + error-hunter + security-auditor | 5 parallel |
+| `/team-feature` | architect -> explorer -> (implement) -> [4 parallel verification] -> simplifier | Sequential+parallel |
+| `/team-debug` | explorer -> (hypotheses) -> [5 parallel verification] -> (fix) | Sequential+parallel |
+
+#### Spawn Strategy
+
+```
+Parallel spawn (independent analysis):
+  - All agents spawned in a single message via Agent tool
   - run_in_background: true
-  - 결과 수집 후 통합
+  - Collect results then integrate
 
-순차 스폰 (의존적 단계):
-  - 이전 에이전트 결과를 다음 에이전트 프롬프트에 포함
-  - 사용자 승인 게이트 삽입 가능
+Sequential spawn (dependent stages):
+  - Previous agent's output included in next agent's prompt
+  - User approval gates can be inserted
 
-하이브리드 (팀 스킬):
-  - Phase 1-2 순차 (설계/탐색)
-  - Phase 3-4 병렬 (검증)
-  - Phase 5 순차 (정리)
+Hybrid (team skills):
+  - Phases 1-2 sequential (design/exploration)
+  - Phases 3-4 parallel (verification)
+  - Phase 5 sequential (cleanup)
 ```
 
-#### 프로액티브 트리거 패턴
+#### Proactive Trigger Patterns
 
-특정 에이전트는 요청 없어도 자동 실행 권장:
-- 코드 작성 완료 후 → **simplifier** (단순화 기회)
-- PR 생성 전 → **team-review** (팀 리뷰)
-- 에러 핸들링 코드 수정 후 → **error-hunter** (사일런트 에러)
-- 새 타입 도입 시 → **type-analyzer** (타입 설계)
-
----
-
-## 2. 세션 관리 베스트프랙티스
-
-### 2.1 One-Feature-Per-Session 원칙
-
-하나의 기능 = 하나의 세션. 컨텍스트 소진 방지.
-
-### 2.2 세션 시작 체크리스트
-
-1. `pwd` 확인
-2. git log + 진행 파일 읽기
-3. 기능 목록에서 다음 우선순위 선택
-4. 개발 서버 시작
-5. 기본 기능 테스트 후 새 작업 시작
-
-### 2.3 컨텍스트 관리
-
-- `/clear` — 관련 없는 작업 전환 시
-- `/compact <지시사항>` — 타겟 압축 ("API 변경사항 중심으로")
-- `Esc + Esc` 또는 `/rewind` — 체크포인트 복원
-- 같은 이슈에서 2번 수정 실패 → `/clear` 후 더 나은 프롬프트로 재시작
-- `/btw` — 대화 이력에 남지 않는 빠른 질문
-
-### 2.4 진행 추적 (멀티세션)
-
-- JSON 형식 기능 목록 (pass/fail 상태) — 마크다운보다 모델이 부적절하게 수정할 가능성 낮음
-- `claude-progress.txt` 세션별 작업 로그
-- 의미 있는 단위마다 커밋 + 푸시
-- `/rename` 으로 세션 이름 지정 (예: "oauth-migration")
+Certain agents recommended for automatic execution without explicit request:
+- After code writing complete -> **simplifier** (simplification opportunities)
+- Before PR creation -> **team-review** (team review)
+- After error handling code changes -> **error-hunter** (silent errors)
+- On new type introduction -> **type-analyzer** (type design)
 
 ---
 
-## 3. CLAUDE.md 작성 가이드
+## 2. Session Management Best Practices
 
-### 포함할 것
-- Claude가 추측할 수 없는 bash 명령어
-- 비표준 코드 스타일 규칙
-- 테스트 명령어
-- 아키텍처 결정 (이유 포함)
-- 개발 환경 quirks
-- 흔한 함정들
+### 2.1 One-Feature-Per-Session Principle
 
-### 제외할 것
-- 코드에서 유추 가능한 것
-- 표준 컨벤션
-- 상세 API 문서 (링크로 대체)
-- 자주 변하는 정보
-- 파일별 상세 설명
+One feature = one session. Prevents context exhaustion.
 
-### 규칙
-- **간결하게** — 각 줄에 대해 "이걸 제거하면 Claude가 실수하나?" 질문. 아니면 삭제
-- 중요한 규칙에 "IMPORTANT", "YOU MUST" 강조
-- 주간 업데이트
-- git에 커밋 (팀 공유)
+### 2.2 Session Start Checklist
 
----
+1. Verify `pwd`
+2. Read git log + progress file
+3. Select next priority from feature list
+4. Start dev server
+5. Test basic functionality before starting new work
 
-## 4. 도구 설계 원칙 (Anthropic)
+### 2.3 Context Management
 
-1. **명확한 도구 선택**: 엔지니어가 확실히 어떤 도구인지 판단 가능해야 함
-2. **도구 겹침 최소화**: 자기완결적이고 견고한 도구
-3. **토큰 효율적 결과**: 과잉 정보 없이 필요한 것만 반환
-4. **명확한 파라미터**: 모호하지 않고 모델 강점에 맞춤
+- `/clear` — when switching to unrelated work
+- `/compact <instructions>` — targeted compression ("focus on API changes")
+- `Esc + Esc` or `/rewind` — restore to checkpoint
+- 2 fix failures on same issue -> `/clear` and restart with better prompt
+- `/btw` — quick question that doesn't stay in conversation history
+
+### 2.4 Progress Tracking (multi-session)
+
+- JSON format feature list (pass/fail status) — less model corruption risk than markdown
+- `claude-progress.txt` per-session work log
+- Commit + push at meaningful milestones
+- `/rename` to name sessions (e.g., "oauth-migration")
 
 ---
 
-## 5. 에러 회복 전략
+## 3. CLAUDE.md Writing Guide
 
-### 5.1 Evaluator 패턴
+### Include
+- Bash commands Claude can't guess
+- Non-standard code style rules
+- Test commands
+- Architecture decisions (with rationale)
+- Dev environment quirks
+- Common pitfalls
 
-- 별도 Evaluator가 라이브 앱을 Playwright로 테스트
-- 27개+ 구체적 계약 기준으로 평가
-- 생성자가 "수정 vs 방향 전환" 전략적 판단
+### Exclude
+- Things inferrable from code
+- Standard conventions
+- Detailed API docs (use links instead)
+- Frequently changing information
+- Per-file detailed descriptions
+
+### Rules
+- **Keep it concise** — for each line ask "If removed, would Claude make a mistake?" If not, delete it
+- Mark important rules with "IMPORTANT", "YOU MUST"
+- Update weekly
+- Commit to git (team sharing)
+
+---
+
+## 4. Tool Design Principles (Anthropic)
+
+1. **Clear tool selection**: engineer should unambiguously know which tool to use
+2. **Minimal tool overlap**: self-contained and robust tools
+3. **Token-efficient results**: return only what's needed, no excess
+4. **Clear parameters**: unambiguous, aligned with model strengths
+
+---
+
+## 5. Error Recovery Strategies
+
+### 5.1 Evaluator Pattern
+
+- Separate Evaluator tests live app via Playwright
+- 27+ concrete contract criteria for evaluation
+- Generator makes strategic "fix vs pivot" decisions
 
 ### 5.2 Self-Correction
 
-- CI 실패 시 자동 재시도 (leo-bot 패턴)
-- 멀티 모델 PR 리뷰 (Claude + Gemini)
-- `withRetry()` 래퍼로 외부 API 호출
+- Auto-retry on CI failure (leo-bot pattern)
+- Multi-model PR review (Claude + Gemini)
+- `withRetry()` wrapper for external API calls
 
-### 5.3 컨텍스트 회복
+### 5.3 Context Recovery
 
-- Compaction 후 SessionStart 훅으로 핵심 컨텍스트 재주입
-- 파일 기반 메모리로 세션 간 정보 보존
-- Sub-agent 결과는 1000-2000 토큰으로 압축
+- SessionStart hook re-injects core context after compaction
+- File-based memory preserves information across sessions
+- Sub-agent results compressed to 1000-2000 tokens
 
 ---
 
-## 6. 보안 패턴
+## 6. Security Patterns
 
-### 6.1 민감정보 관리 (leo-cli `leo secret`)
+### 6.1 Secret Management (leo-cli `leo secret`)
 
-- `.env`, credentials, API 키 → 절대 커밋 금지
-- **시크릿 관리는 leo-cli의 `leo secret` 커맨드가 담당** (Keychain service="leo-cli")
-- 훅으로 자동 탐지 + 차단 (detect-secrets.sh, prompt-guard.sh)
+- `.env`, credentials, API keys -> NEVER commit
+- **Secret management handled by leo-cli's `leo secret` command** (Keychain service="leo-cli")
+- Hooks auto-detect + block (detect-secrets.sh, prompt-guard.sh)
 
-#### 핵심 커맨드
+#### Key Commands
 
 ```bash
-leo secret add <name>              # Keychain에 저장
-leo secret get <name>              # 조회
-leo secret list                    # 전체 목록
-leo secret check                   # 현재 프로젝트 매니페스트 기준 누락 확인
-leo secret sync push/pull          # 크로스 디바이스 동기화 (암호화 Gist)
-leo secret scan [--add]            # .env 파일에서 시크릿 스캔
-leo secret hook install            # pre-commit 유출 방지 훅
+leo secret add <name>              # Store in Keychain
+leo secret get <name>              # Retrieve
+leo secret list                    # List all
+leo secret check                   # Check missing secrets per project manifest
+leo secret sync push/pull          # Cross-device sync (encrypted Gist)
+leo secret scan [--add]            # Scan .env file for secrets
+leo secret hook install            # Install pre-commit leak prevention hook
 ```
 
-#### Keychain 스키마
+#### Keychain Schema
 
 ```
 service: "leo-cli"
-account: "leo-cli-{KEY}"           # 글로벌
-account: "leo-cli-{project}:{KEY}" # 프로젝트별
+account: "leo-cli-{KEY}"           # Global
+account: "leo-cli-{project}:{KEY}" # Project-specific
 metadata: ~/.leo/secrets-meta.json
 ```
 
-#### 프로젝트 시크릿 매니페스트 (`.leo-secrets.yaml`)
+#### Project Secret Manifest (`.leo-secrets.yaml`)
 
-각 프로젝트 루트에 필수 시크릿 선언 → 세션 시작 시 자동 체크:
+Declare required secrets at project root -> auto-checked at session start:
 
 ```yaml
 secrets:
   - name: OPENAI_API_KEY
-    description: "OpenAI API 키"
+    description: "OpenAI API key"
     required: true
   - name: SLACK_WEBHOOK
-    description: "Slack 알림 웹훅"
+    description: "Slack notification webhook"
     required: false
 ```
 
-#### 상세 문서
-- `leo-cli/docs/SECRET-SYNC.md` — 동기화 프로토콜
-- `leo-cli/docs/COMMANDS.md` — 전체 커맨드 레퍼런스
+#### Detailed Docs
+- `leo-cli/docs/SECRET-SYNC.md` — Sync protocol
+- `leo-cli/docs/COMMANDS.md` — Full command reference
 
-### 6.2 파일 보호
-- `.env*`, `*.pem`, `*.key`, `.git/` → PreToolUse 훅으로 편집 차단
-- `package-lock.json`, `pnpm-lock.yaml` → 직접 편집 금지
+### 6.2 File Protection
+- `.env*`, `*.pem`, `*.key`, `.git/` -> blocked via PreToolUse hook
+- `package-lock.json`, `pnpm-lock.yaml` -> direct editing forbidden
 
-### 6.3 프롬프트 인젝션
-- 외부 도구 결과에 인젝션 의심 시 플래그
-- parry 훅으로 자동 스캔 고려
+### 6.3 Prompt Injection
+- Flag injection-suspicious results from external tools
+- Consider parry hook for auto-scanning
 
 ---
 
-## 7. leo-* 프로젝트 공통 패턴
+## 7. leo-* Project Common Patterns
 
-### 7.1 로깅
+### 7.1 Logging
 - TypeScript: pino (`logger.info/warn/error`)
 - zsh: `log_info/log_success/log_warn/log_error`
-- `console.log` 절대 금지
+- `console.log` absolutely forbidden
 
-### 7.2 설정
-- YAML 기반 (`settings.yaml`, `projects.yaml`)
-- Zod 스키마 검증
-- `config.getSettings()` 접근
+### 7.2 Configuration
+- YAML-based (`settings.yaml`, `projects.yaml`)
+- Zod schema validation
+- `config.getSettings()` access
 
-### 7.3 서비스 관리
-- launchd로 macOS 상시 실행
-- 대시보드 포트: leo-bot(3848), leo-secretary(3849), slack(3847)
-- `deploy.sh` 스크립트로 배포
+### 7.3 Service Management
+- launchd for macOS persistent execution
+- Dashboard ports: leo-bot(3848), leo-secretary(3849), slack(3847)
+- `deploy.sh` script for deployment
 
-### 7.4 에러 처리
-- `withRetry()` 래퍼
-- 에러 무시 금지 — 최소 로깅
-- 설정 하드코딩 금지
+### 7.4 Error Handling
+- `withRetry()` wrapper
+- Error suppression forbidden — minimum logging required
+- Hard-coded config forbidden
 
-### 7.5 Git 워크플로우
+### 7.5 Git Workflow
 - Conventional Commits (`feat:`, `fix:`, `docs:`)
-- 브랜치: `main` (프로덕션)
-- 기능별 버전 업데이트 (SemVer)
+- Branch: `main` (production)
+- SemVer version updates per feature
 
 ---
 
-## 8. 참고 소스
+## 8. Reference Sources
 
-| 소스 | URL | 핵심 내용 |
-|------|-----|-----------|
-| Building Effective Agents | anthropic.com/engineering/building-effective-agents | 5가지 워크플로우 패턴 |
-| Harness Design | anthropic.com/engineering/harness-design-long-running-apps | 삼중 에이전트 + 스프린트 계약 |
-| Effective Harnesses | anthropic.com/engineering/effective-harnesses-for-long-running-agents | 장시간 에이전트 하네스 |
-| Context Engineering | anthropic.com/engineering/effective-context-engineering-for-ai-agents | 컨텍스트 윈도우 최적화 |
-| Multi-Agent Research | anthropic.com/engineering/multi-agent-research-system | 멀티에이전트 아키텍처 |
-| Auto Mode | anthropic.com/engineering/claude-code-auto-mode | 안전한 자동 모드 |
-| Building C Compiler | anthropic.com/engineering/building-c-compiler | 병렬 Claude 팀 |
-| Think Tool | anthropic.com/engineering/claude-think-tool | 복잡한 도구 사용 시 사고 |
-| Writing Tools for Agents | anthropic.com/engineering/writing-tools-for-agents | 에이전트용 도구 설계 |
-| Claude Code Best Practices | anthropic.com/engineering/claude-code-best-practices | 코딩 베스트프랙티스 |
+| Source | URL | Key Content |
+|--------|-----|-------------|
+| Building Effective Agents | anthropic.com/engineering/building-effective-agents | 5 workflow patterns |
+| Harness Design | anthropic.com/engineering/harness-design-long-running-apps | Triple-agent + sprint contract |
+| Effective Harnesses | anthropic.com/engineering/effective-harnesses-for-long-running-agents | Long-running agent harness |
+| Context Engineering | anthropic.com/engineering/effective-context-engineering-for-ai-agents | Context window optimization |
+| Multi-Agent Research | anthropic.com/engineering/multi-agent-research-system | Multi-agent architecture |
+| Auto Mode | anthropic.com/engineering/claude-code-auto-mode | Safe auto mode |
+| Building C Compiler | anthropic.com/engineering/building-c-compiler | Parallel Claude teams |
+| Think Tool | anthropic.com/engineering/claude-think-tool | Complex tool use reasoning |
+| Writing Tools for Agents | anthropic.com/engineering/writing-tools-for-agents | Agent tool design |
+| Claude Code Best Practices | anthropic.com/engineering/claude-code-best-practices | Coding best practices |

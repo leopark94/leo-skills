@@ -1,6 +1,6 @@
 {
   "$schema": "https://code.claude.com/hooks-schema.json",
-  "_comment": "Leo Master Hooks — install.sh가 ~/.claude/settings.json에 병합",
+  "_comment": "Leo Master Hooks — install.sh merges into ~/.claude/settings.json",
 
   "SessionStart": [
     {

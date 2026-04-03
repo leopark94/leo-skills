@@ -1,23 +1,23 @@
 #!/bin/zsh
-# compact-reinject.sh — SessionStart(compact) 훅: 컨텍스트 압축 후 핵심 정보 재주입
-# Anthropic 블로그 권장: compaction 후 중요한 규칙들이 사라지므로 재주입 필요
+# compact-reinject.sh — SessionStart(compact) hook: re-inject core context after compaction
+# Anthropic blog recommended: critical rules vanish after compaction, so re-inject them
 
 cat <<'CONTEXT'
-## Leo 프로젝트 핵심 규칙 (compaction 재주입)
+## Leo Project Core Rules (compaction re-injection)
 
-1. 민감정보 → `leo secret add <name>` (절대 코드에 하드코딩 금지)
-2. 로깅: pino (TS), log_* (zsh). console.log 금지
-3. 설정: config.getSettings() 접근. 하드코딩 금지
-4. 에러: withRetry() 래퍼. 에러 무시 금지
-5. Git: Conventional Commits. 기능별 버전 업데이트 (SemVer)
-6. 테스트: 변경 후 반드시 빌드 확인 (`npm run build`)
-7. 서비스 포트: leo-bot(3848), leo-secretary(3849), slack(3847)
-8. MASTER.md (/Users/leo/utils/leo-skills/MASTER.md) 참조 확인
+1. Secrets -> `leo secret add <name>` (NEVER hard-code in source)
+2. Logging: pino (TS), log_* (zsh). console.log forbidden
+3. Config: config.getSettings() access. No hard-coded values
+4. Errors: withRetry() wrapper. Error suppression forbidden
+5. Git: Conventional Commits. SemVer version updates per feature
+6. Testing: Always verify build after changes (`npm run build`)
+7. Service ports: leo-bot(3848), leo-secretary(3849), slack(3847)
+8. Reference: MASTER.md (/Users/leo/utils/leo-skills/MASTER.md)
 
-## IMPORTANT: 팀 퍼스트 원칙 (절대 잊지 말 것)
+## IMPORTANT: Team-First Principle (never forget)
 
-- /sprint, /review, /investigate는 팀 모드가 기본
-- 전문 에이전트(architect, reviewer, type-analyzer, test-analyzer, error-hunter, simplifier, security-auditor)를 상황에 맞게 병렬 스폰
-- 솔로 모드는 --light, --quick, --serial로 명시적 opt-out만 가능
-- 커밋 전 /review 강제 (편집 3회+ 누적 시 마커 자동 생성)
+- /sprint, /review, /investigate default to team mode
+- Deploy specialist agents (architect, reviewer, type-analyzer, test-analyzer, error-hunter, simplifier, security-auditor) in parallel as needed
+- Solo mode only via explicit opt-out: --light, --quick, --serial
+- /review enforced before commit (marker auto-created after 3+ edits)
 CONTEXT

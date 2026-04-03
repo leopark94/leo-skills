@@ -1,6 +1,6 @@
 #!/bin/zsh
-# protect-files.sh — PreToolUse 훅: 보호 파일 편집 차단
-# package-lock.json, .git/, 인증 파일 등 직접 편집 방지
+# protect-files.sh — PreToolUse hook: block editing of protected files
+# Prevents direct editing of lock files, .git/, credential files, etc.
 
 set -euo pipefail
 
@@ -8,14 +8,14 @@ INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# Edit/Write만 검사
+# Only inspect Edit/Write
 if [[ "$TOOL_NAME" != "Write" && "$TOOL_NAME" != "Edit" ]]; then
   exit 0
 fi
 
 [[ -z "$FILE_PATH" ]] && exit 0
 
-# 보호 대상 패턴
+# Protected file patterns
 PROTECTED_PATTERNS=(
   '\.git/'
   'package-lock\.json$'
@@ -30,8 +30,8 @@ PROTECTED_PATTERNS=(
 
 for pattern in "${PROTECTED_PATTERNS[@]}"; do
   if echo "$FILE_PATH" | grep -qE "$pattern"; then
-    echo "BLOCKED: 보호 파일 직접 편집 금지 ($FILE_PATH)"
-    echo "→ lock 파일은 패키지 매니저로, .git은 git 명령어로 관리"
+    echo "BLOCKED: Direct editing of protected file forbidden ($FILE_PATH)"
+    echo "-> Lock files: use package manager. .git: use git commands."
     exit 2
   fi
 done
