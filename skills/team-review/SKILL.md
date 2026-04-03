@@ -91,27 +91,36 @@ Agent(
 
 ## 실행 프로세스
 
-### Step 1: 변경사항 수집
+### Step 1: 사전 데이터 수집 (Bash 단계 — 메인 컨텍스트)
+
+에이전트 스폰 전에 **메인 컨텍스트에서 Bash로 데이터를 미리 수집**하여 에이전트 프롬프트에 포함.
+(분석 에이전트는 Bash 없이 Read/Grep/Glob만 사용 → 도구 호출 최대 10개 병렬 배칭)
 
 ```bash
-# PR 모드
-gh pr diff <n>
-gh pr view <n> --json files
+# 1. diff stat + 파일 목록
+DIFF_STAT=$(git diff --stat)
+FILE_LIST=$(git diff --name-only)
 
-# diff 모드
-git diff --stat
-git diff
+# 2. diff 내용 (변경 요약)
+DIFF_CONTENT=$(git diff)
 
-# 커밋 모드
-git show <hash> --stat
-git diff <hash>~1 <hash>
+# 3. 새 타입/인터페이스 감지
+NEW_TYPES=$(git diff | grep -E '^\+.*(interface|type|class|enum)\s')
+
+# 4. 에러 핸들링 변경 감지
+ERROR_CHANGES=$(git diff | grep -E '^\+.*(catch|throw|Error|reject|finally)')
+
+# PR 모드면: gh pr diff <n>, gh pr view <n> --json files
 ```
+
+이 데이터를 각 에이전트 프롬프트의 `{diff_summary}`, `{file_list}`에 주입.
 
 ### Step 2: 5개 에이전트 병렬 스폰
 
 **반드시 하나의 메시지에서 5개 Agent tool을 동시에 호출.**
-각 에이전트에게 diff 요약과 파일 목록을 전달.
+각 에이전트에게 사전 수집된 diff 데이터와 파일 목록을 전달.
 모든 에이전트는 `run_in_background: true`로 실행.
+에이전트는 Bash 없이 Read/Grep/Glob만 사용하므로 내부 도구 호출도 병렬 배칭.
 
 ### Step 3: 결과 수집 & 통합
 

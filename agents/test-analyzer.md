@@ -1,7 +1,7 @@
 ---
 name: test-analyzer
 description: "테스트 커버리지 품질과 완전성을 분석하여 누락된 케이스를 식별하는 에이전트"
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 effort: high
 context: fork
@@ -24,13 +24,13 @@ context: fork
 
 ### Phase 1: 변경사항 파악
 
-```bash
-# 변경된 소스 파일 목록
-git diff --name-only HEAD~1 -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.py'
+> **배칭 최적화**: git diff 등 Bash 데이터는 오케스트레이터가 프롬프트에 미리 포함.
+> 이 에이전트는 Read/Grep/Glob만 사용하여 도구 호출이 최대 10개 병렬 배칭됨.
 
-# 변경된 함수/클래스 식별
-git diff HEAD~1 -- '*.ts' | grep -E '^\+.*(function|class|export|const.*=>)'
-```
+오케스트레이터가 전달해야 할 정보:
+- 변경된 소스 파일 목록 (git diff --name-only)
+- 변경된 함수/클래스 목록 (git diff 요약)
+- diff stat
 
 ### Phase 2: 테스트 매핑
 

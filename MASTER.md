@@ -62,7 +62,49 @@ Planner → Generator → Evaluator
 - 읽기/탐색 도구는 자동 허용, 쓰기/실행은 확인
 - 샌드박스 + 훅 조합으로 보안 유지
 
-### 1.6 에이전트 팀 패턴 (Agent Team Orchestration)
+### 1.6 아키텍처 원칙 (TDD + DDD + CA + CQRS)
+
+모든 프로젝트에 기본 적용하되, **규모에 맞게 수준 조절**.
+
+#### TDD (Test-Driven Development)
+- Red → Green → Refactor 사이클
+- 테스트가 설계를 이끔 — 블루프린트에 테스트 시나리오 필수 포함
+
+#### DDD (Domain-Driven Design)
+- Entity, Value Object, Aggregate, Domain Service, Repository Interface
+- 유비쿼터스 언어: 코드 네이밍 = 도메인 용어
+- Bounded Context로 모듈/서비스 경계 정의
+
+#### Clean Architecture
+- 의존성 방향: Domain ← Application ← Infrastructure ← Presentation
+- 내부 레이어는 외부를 모름 — 의존성 역전 원칙
+- 프레임워크 독립: 도메인에 프레임워크 의존 금지
+
+#### CQRS
+- Command(쓰기)와 Query(읽기) Handler 분리
+- 규모별: 소규모=Handler분리, 중규모=모델분리, 대규모=이벤트소싱
+
+#### 규모별 적용
+
+| 규모 | DDD | CQRS | CA | 모노레포 |
+|------|-----|------|-----|---------|
+| 소규모 | Entity/VO | Handler분리 | Feature-based | 불필요 |
+| 중규모 | Aggregate+Repo | 읽기/쓰기분리 | Layered | 고려 |
+| 대규모 | Bounded Context | 이벤트기반 | 풀 CA | Turborepo/Nx |
+
+#### ADR (Architecture Decision Record) — 필수
+
+모든 아키텍처 결정은 `docs/adr/NNNN-{title}.md`에 기록.
+Architect 에이전트가 자동 생성. 형식:
+
+```
+# ADR-NNNN: {제목}
+- 상태: accepted | proposed | deprecated
+- 날짜: YYYY-MM-DD
+## 컨텍스트 / 결정 / 선택지 / 결과
+```
+
+### 1.7 에이전트 팀 패턴 (Agent Team Orchestration)
 
 Claude Code의 Agent tool로 전문 에이전트를 **팀으로 스폰**하여 작업.
 단일 에이전트 대비 더 깊은 분석과 빠른 병렬 처리.

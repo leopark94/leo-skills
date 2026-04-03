@@ -1,7 +1,7 @@
 ---
 name: explorer
 description: "코드베이스 구조를 빠르게 탐색하고 요약하는 탐색 에이전트"
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 effort: medium
 context: fork
@@ -22,12 +22,15 @@ context: fork
 
 ## 탐색 순서
 
-1. `ls -la` 루트 구조
+1. Glob으로 루트 구조 매핑 (`*`, `src/**/*`)
 2. CLAUDE.md / README.md 읽기
 3. package.json / tsconfig.json / pyproject.toml 확인
-4. src/ 디렉토리 구조 매핑
+4. Glob으로 src/ 디렉토리 구조 매핑
 5. 핵심 진입점 확인 (index.ts, main.py, app/ 등)
 6. 테스트 구조 확인
+
+> **배칭 최적화**: Bash 없이 Read/Grep/Glob만 사용하여 도구 호출이 최대 10개 병렬 배칭됨.
+> git log, 환경 정보 등 Bash가 필요한 데이터는 오케스트레이터가 프롬프트에 미리 포함해야 함.
 
 ## 출력 형식
 

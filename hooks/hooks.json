@@ -23,6 +23,18 @@
     }
   ],
 
+  "UserPromptSubmit": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/prompt-guard.sh"
+        }
+      ]
+    }
+  ],
+
   "PreToolUse": [
     {
       "matcher": "Edit|Write",

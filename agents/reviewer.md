@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "코드 리뷰를 수행하는 리뷰어 에이전트 (품질, 보안, 테스트 병렬)"
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 effort: high
 context: fork
