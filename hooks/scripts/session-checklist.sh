@@ -34,3 +34,23 @@ if [[ -f "$PROJECT_ROOT/.claude-needs-review" ]]; then
   EDIT_COUNT=$(cat "$PROJECT_ROOT/.claude-needs-review" 2>/dev/null || echo "?")
   echo "⚠️ 이전 세션에서 리뷰 마커 발견 (편집 ${EDIT_COUNT}회). /review 실행 또는 마커 삭제 필요."
 fi
+
+# 시크릿 매니페스트 체크
+MANIFEST="$PROJECT_ROOT/.leo-secrets.yaml"
+if [[ -f "$MANIFEST" ]]; then
+  MISSING=0
+  while IFS= read -r line; do
+    SECRET_NAME=$(echo "$line" | sed 's/.*name: *//;s/ *$//')
+    [[ -z "$SECRET_NAME" ]] && continue
+    REQUIRED=$(grep -A2 "name: *${SECRET_NAME}" "$MANIFEST" | grep "required:" | grep -q "true" && echo "true" || echo "false")
+    if [[ "$REQUIRED" == "true" ]]; then
+      if ! security find-generic-password -a "leo-skills" -s "leo-project-${SECRET_NAME}" -w >/dev/null 2>&1 && \
+         ! security find-internet-password -a "$SECRET_NAME" -w >/dev/null 2>&1; then
+        MISSING=$((MISSING + 1))
+      fi
+    fi
+  done < <(grep "name:" "$MANIFEST" | grep -v "^#" | grep -v "^secrets:")
+  if [[ $MISSING -gt 0 ]]; then
+    echo "🔐 필수 시크릿 ${MISSING}개 누락! \`leo secret check\` 로 확인하세요."
+  fi
+fi

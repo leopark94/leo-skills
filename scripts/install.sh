@@ -87,6 +87,15 @@ for skill_dir in "$SKILLS_ROOT"/skills/*/; do
   fi
 done
 
+# leo secret 커맨드 심링크
+LEO_SECRET="$SKILLS_ROOT/scripts/leo-secret.sh"
+if [[ -f "$LEO_SECRET" ]]; then
+  if [[ ! -L "/usr/local/bin/leo-secret" ]] || [[ "$(readlink /usr/local/bin/leo-secret 2>/dev/null)" != "$LEO_SECRET" ]]; then
+    ln -sf "$LEO_SECRET" /usr/local/bin/leo-secret 2>/dev/null && log_info "leo-secret 커맨드 등록: /usr/local/bin/leo-secret" || \
+    log_warn "leo-secret 심링크 실패 (sudo 필요할 수 있음)"
+  fi
+fi
+
 log_info ""
 log_info "========================================="
 log_info "  Leo Master Skills 설치 완료!"
