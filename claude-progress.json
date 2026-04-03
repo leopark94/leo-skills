@@ -6,28 +6,23 @@
     {
       "id": "phase-1",
       "name": "leo-skills 중복 제거 + leo-cli 연동",
-      "status": "in_progress",
-      "tasks": [
-        { "id": "1-1", "name": "leo-secret.sh 삭제", "status": "pending" },
-        { "id": "1-2", "name": "훅 Keychain 스키마를 leo-cli 기준으로 변경 (service=leo-cli)", "status": "pending" },
-        { "id": "1-3", "name": "session-checklist가 leo secret check 호출", "status": "pending" },
-        { "id": "1-4", "name": "install.sh에서 leo-secret 심링크 제거", "status": "pending" },
-        { "id": "1-5", "name": "MASTER.md/README.md에서 leo secret 문서를 leo-cli 기준으로 수정", "status": "pending" }
-      ]
+      "status": "done",
+      "completed": "2026-04-03"
     },
     {
       "id": "phase-2",
       "name": "leo-cli ↔ leo-skills 통합 (leo claude 커맨드)",
-      "status": "pending",
+      "status": "done",
+      "completed": "2026-04-03",
       "tasks": [
-        { "id": "2-1", "name": "leo-cli/lib/claude.sh가 leo-skills를 소스로 지정", "status": "pending" },
-        { "id": "2-2", "name": "leo claude skills/agents/hooks 커맨드 구현", "status": "pending" },
-        { "id": "2-3", "name": ".leo-secrets.yaml을 leo secret check에 네이티브 지원", "status": "pending" }
+        { "id": "2-1", "name": "leo claude가 leo-skills를 소스로 사용", "status": "done" },
+        { "id": "2-2", "name": "leo claude skills/agents/hooks 커맨드", "status": "done" },
+        { "id": "2-3", "name": "leo secret check (.leo-secrets.yaml)", "status": "done" }
       ]
     },
     {
       "id": "phase-3",
-      "name": "공통 패키지 추출 (@leo/shared)",
+      "name": "공통 패키지 추출 (@leo/shared) + 모노레포",
       "status": "pending",
       "tasks": [
         { "id": "3-1", "name": "@leo/shared 패키지 (pino, sqlite, yaml, types)", "status": "pending" },
@@ -38,12 +33,14 @@
     },
     {
       "id": "phase-4",
-      "name": "설정 표준화 + ADR 중앙화",
+      "name": "설정 표준화 + ADR + 버전/배포",
       "status": "pending",
       "tasks": [
         { "id": "4-1", "name": "모든 프로젝트 YAML + Zod 표준화", "status": "pending" },
         { "id": "4-2", "name": "leo adr 커맨드 구현", "status": "pending" },
-        { "id": "4-3", "name": "빈 프로젝트(leo-bor, leo-claude) 정리", "status": "pending" }
+        { "id": "4-3", "name": "빈 프로젝트(leo-bor, leo-claude) 정리", "status": "pending" },
+        { "id": "4-4", "name": "버전 관리 자동화 (SemVer + CHANGELOG)", "status": "pending" },
+        { "id": "4-5", "name": "배포 파이프라인 (install.sh + leo update)", "status": "pending" }
       ]
     }
   ]
