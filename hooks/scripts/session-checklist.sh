@@ -28,6 +28,11 @@ All tasks default to agent team deployment:
 - Every Agent call MUST use subagent_type from ~/utils/leo-skills/agents/
 - If no agent exists for a task: CREATE one at agents/<name>.md first, then use it
 - For parallel work: use TeamCreate (native teammates), NEVER tmux
+
+## IMPORTANT: Documentation Discipline
+
+- BEFORE work: gh issue create → check progress → document plan → ADR if needed
+- AFTER work: comment results on issue → close → update progress → update docs → issue # in commit
 CONTEXT
 
 # Check CLAUDE.md exists for leo-* projects

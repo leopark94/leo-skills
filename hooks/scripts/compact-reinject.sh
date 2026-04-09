@@ -27,4 +27,9 @@ cat <<'CONTEXT'
 - Every Agent call MUST use subagent_type from ~/utils/leo-skills/agents/
 - No matching agent? CREATE one at agents/<name>.md first, then use it
 - Parallel work: TeamCreate (native teammates), NEVER tmux
+
+## IMPORTANT: Documentation Discipline (작업 전후 필수)
+
+BEFORE: gh issue create → 진행상황 확인 → 계획 문서화 → ADR
+AFTER: 이슈 결과 코멘트 → close → progress 업데이트 → 문서 반영 → 커밋에 이슈번호
 CONTEXT
