@@ -317,6 +317,205 @@ describe('CreateUserHandler', () => {
 });
 ```
 
+## Domain-Specific Scenario Templates
+
+The 7-layer framework is the baseline. For specific code patterns, these additional scenarios are **mandatory**.
+
+### Regex / Pattern Matching
+
+```
+Matching (should match):
+  - Typical valid input ("user@example.com")
+  - Minimum valid input ("a@b.co")
+  - With subdomains ("user@mail.example.co.kr")
+  - With special allowed chars ("user+tag@example.com")
+  - Unicode if supported ("사용자@example.com")
+
+Non-matching (should reject):
+  - Empty string
+  - Missing required parts ("@example.com", "user@", "user")
+  - Double special chars ("user@@example.com", "user@example..com")
+  - Spaces in string ("user @example.com")
+  - Leading/trailing spaces (" user@example.com ")
+  - Control characters / null bytes
+  - SQL injection ("'; DROP TABLE; --")
+  - Extremely long input (10000+ chars → ReDoS check)
+
+Edge cases:
+  - Exact boundary of length limits
+  - Mix of valid and invalid chars at boundaries
+  - Lookahead/lookbehind boundaries (if used)
+  - Greedy vs lazy matching differences
+  - Backtracking performance (catastrophic backtracking / ReDoS)
+  - Multiline input with anchors (^ and $)
+```
+
+### Date/Time Parsing
+
+```
+Valid dates:
+  - Standard format ("2024-01-15", "01/15/2024")
+  - With time ("2024-01-15T10:30:00Z")
+  - Different timezones ("2024-01-15T10:30:00+09:00")
+  - Leap year Feb 29 ("2024-02-29")
+  - Year boundaries ("2024-12-31", "2025-01-01")
+
+Invalid dates:
+  - Feb 29 on non-leap year ("2023-02-29")
+  - Feb 30 ("2024-02-30")
+  - Month 13 ("2024-13-01")
+  - Day 32 ("2024-01-32")
+  - Month 0, Day 0 ("2024-00-00")
+  - Negative year ("-0001-01-01")
+  - Empty string, null
+  - Non-date string ("hello", "tomorrow")
+
+Edge cases:
+  - Midnight boundary (23:59:59 → 00:00:00)
+  - DST transitions (spring forward, fall back)
+  - Unix epoch (1970-01-01)
+  - Y2K38 (2038-01-19T03:14:07Z)
+  - Far future dates (9999-12-31)
+  - Timezone offset edge cases (+14:00, -12:00)
+```
+
+### Money / Currency / Financial Calculations
+
+```
+Valid calculations:
+  - Normal amounts (100.00, 49.99)
+  - Zero (0.00)
+  - Large amounts (999999999.99)
+
+Precision:
+  - Floating point: 0.1 + 0.2 === 0.30 (NOT 0.30000000000000004)
+  - Rounding: 10.005 → 10.01 (banker's rounding?)
+  - Division: 100 / 3 → handle remainder correctly
+  - Multiplication: 19.99 * 100 → 1999 (not 1998.9999...)
+
+Edge cases:
+  - Negative amounts (refunds, debits)
+  - Currency conversion rounding
+  - Tax calculation rounding (each line item vs total)
+  - Overflow (Number.MAX_SAFE_INTEGER)
+  - Sub-cent amounts (crypto: 0.00000001)
+  - Different decimal places (JPY has 0, BHD has 3)
+```
+
+### URL / Path Handling
+
+```
+Valid URLs:
+  - Standard ("https://example.com/path")
+  - With query ("https://example.com?q=search&page=1")
+  - With fragment ("https://example.com#section")
+  - With port ("https://example.com:8080/path")
+  - With auth ("https://user:pass@example.com")
+  - IP address ("http://192.168.1.1")
+  - IPv6 ("http://[::1]:8080")
+  - Unicode path ("https://example.com/경로")
+
+Invalid/Dangerous:
+  - Path traversal ("../../etc/passwd", "..%2F..%2Fetc%2Fpasswd")
+  - Protocol injection ("javascript:alert(1)")
+  - SSRF targets ("http://169.254.169.254/metadata")
+  - Null bytes ("https://example.com%00.evil.com")
+  - Open redirect ("https://example.com/redirect?url=https://evil.com")
+
+Edge cases:
+  - Trailing slash vs no slash ("/path/" vs "/path")
+  - Double slashes ("//path")
+  - Encoded characters ("%20", "%2F")
+  - Empty path, empty query, empty fragment
+  - Very long URLs (2048+ chars)
+```
+
+### Pagination / List Operations
+
+```
+Normal:
+  - First page (page=1, limit=20) → 20 items + total
+  - Middle page → correct offset
+  - Last page → partial results (< limit)
+
+Edge cases:
+  - Empty result set → 200 + empty array (NOT 404)
+  - Page beyond total → empty array
+  - Page 0 or negative → error or default to page 1
+  - Limit 0 → error or default
+  - Limit exceeding max → cap to max
+  - Total count accuracy with filters
+  - Concurrent insert during pagination (item appears/disappears)
+  - Sort order stability (same score → deterministic order)
+```
+
+### Authentication / Token Handling
+
+```
+Valid flows:
+  - Login with correct credentials → token
+  - Token refresh before expiry → new token
+  - Logout → token invalidated
+
+Invalid/Attack:
+  - Wrong password → 401 (generic message, no "password wrong")
+  - Non-existent user → 401 (same timing as wrong password)
+  - Expired token → 401
+  - Tampered token (modified payload) → 401
+  - Token from different environment → 401
+  - Brute force (N failed attempts → rate limit / lockout)
+  - Token reuse after logout → 401
+  - SQL injection in username ("admin'--")
+
+Edge cases:
+  - Token expiry exactly at boundary
+  - Clock skew between servers
+  - Concurrent login from multiple devices
+  - Password with unicode / special chars
+  - Empty password, very long password (1000+ chars)
+```
+
+### File Operations
+
+```
+Valid:
+  - Read existing file → content
+  - Write new file → created
+  - Write existing file → overwritten (or versioned)
+
+Invalid:
+  - Read non-existent file → FileNotFoundError
+  - Write to read-only location → PermissionError
+  - Path traversal ("../../../etc/passwd")
+  - Filename with special chars ("file name (1).txt", "파일.txt")
+  - Symlink following (should it follow or reject?)
+
+Edge cases:
+  - Empty file (0 bytes)
+  - Very large file (> memory limit)
+  - Binary file treated as text
+  - Concurrent read/write to same file
+  - File locked by another process
+  - Disk full during write
+  - Filename length at OS limit (255 chars)
+  - Hidden files (dotfiles)
+```
+
+### Use Template Selection
+
+When test-writer encounters code that matches these patterns, it MUST apply the domain-specific template ON TOP of the 7-layer framework. These are additive, not replacements.
+
+```
+Detection heuristic:
+  - Function accepts/returns RegExp or regex string → Regex template
+  - Function name contains "parse", "format" + "date"/"time" → Date template
+  - Function deals with price, amount, currency, tax → Money template
+  - Function accepts URL, path, route → URL template
+  - Function has page, limit, offset params → Pagination template
+  - Function has token, auth, login, password → Auth template
+  - Function uses fs, readFile, writeFile → File template
+```
+
 ## Red Phase Verification
 
 After writing ALL tests:
