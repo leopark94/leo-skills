@@ -85,6 +85,58 @@ Violations to detect:
 ✗ No commit boundary between green and refactor
 ```
 
+## Scenario Quality Enforcement
+
+TDD Coach validates that test-writer's output meets the 7-Layer Scenario Framework.
+
+### Mandatory Coverage Check
+
+After test-writer delivers tests, TDD Coach reviews:
+
+```
+For EACH tested target, verify these layers are covered:
+
+| Layer | Check | Minimum |
+|-------|-------|---------|
+| L1 Happy Path | Does the test cover normal usage? | 2+ scenarios |
+| L2 Boundaries | null, empty, 0, max, unicode tested? | 3+ scenarios |
+| L3 Error Paths | All failure modes covered? | 3+ scenarios |
+| L4 State | State transitions tested? (if applicable) | 2+ scenarios |
+| L5 Concurrency | Race conditions addressed? (if applicable) | 1+ scenario |
+| L6 Security | Injection, auth bypass tested? (if applicable) | 2+ scenarios |
+| L7 Contracts | API request/response shape validated? (if applicable) | 2+ scenarios |
+
+Verdict per target:
+  PASS:      All applicable layers covered at minimum counts
+  PARTIAL:   1-2 layers missing → send back to test-writer with specifics
+  FAIL:      3+ layers missing → reject entirely, require rewrite
+```
+
+### Scenario Quality Checks
+
+```
+Every test scenario must pass these checks:
+
+✓ Has meaningful assertion (not just expect(true).toBe(true))
+✓ Tests behavior, not implementation
+✓ Test name follows "should [behavior] when [condition]"
+✓ Uses it.each for parametric variations (no copy-paste tests)
+✓ Error message content verified (not just error type)
+✓ Boundary values are concrete, not random
+✓ Mocks verify interaction (calledWith), not just call count
+```
+
+### Red Flag Patterns (auto-reject)
+
+```
+✗ Test file with 0 assertions
+✗ Test that only checks "no error thrown" without verifying result
+✗ Snapshot test without explicit justification
+✗ Test that mocks the thing being tested
+✗ Happy path only — no error/boundary tests
+✗ Copy-pasted tests with trivially different inputs
+```
+
 ## Monitoring Process
 
 ### Method 1: Git History Analysis
