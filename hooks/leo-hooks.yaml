@@ -1,0 +1,115 @@
+# .leo-hooks.yaml — Hook configuration
+# Place at project root for project-specific overrides, or ~/.leo/hooks.yaml for global defaults
+# Project config merges ON TOP of global config (project wins on conflict)
+
+detect-secrets:
+  enabled: true
+  allow-env-files: true
+  blocked-extensions:
+    - .pem
+    - .key
+  patterns:
+    - { name: openai,      regex: 'sk-[a-zA-Z0-9]{20,}',              enabled: true }
+    - { name: aws,         regex: 'AKIA[0-9A-Z]{16}',                 enabled: true }
+    - { name: github-pat,  regex: 'ghp_[a-zA-Z0-9]{36}',              enabled: true }
+    - { name: github-oauth,regex: 'gho_[a-zA-Z0-9]{36}',              enabled: true }
+    - { name: gitlab-pat,  regex: 'glpat-[a-zA-Z0-9-]{20}',           enabled: true }
+    - { name: slack-bot,   regex: 'xoxb-[0-9]+-[a-zA-Z0-9]+',         enabled: true }
+    - { name: slack-user,  regex: 'xoxp-[0-9]+-[a-zA-Z0-9]+',         enabled: true }
+    - { name: google-api,  regex: 'AIza[0-9A-Za-z_-]{35}',            enabled: true }
+    - { name: google-oauth,regex: 'ya29\.[0-9A-Za-z_-]+',             enabled: true }
+    - { name: private-key, regex: '-----BEGIN.*PRIVATE KEY-----',      enabled: true }
+  bash-guard:
+    enabled: true
+    block-secret-exports: true
+    block-hardcoded-auth-headers: true
+
+dangerous-commands:
+  enabled: true
+  block:
+    - { name: rm-root,       pattern: 'rm\s+(-[a-zA-Z]*f[a-zA-Z]*\s+|--force\s+)*(\/|~|\$HOME|\.\.?)\s*$' }
+    - { name: force-push-main,pattern: 'git\s+push\s+.*--force.*\s+(main|master)' }
+    - { name: reset-hard,    pattern: 'git\s+reset\s+--hard' }
+    - { name: checkout-all,  pattern: 'git\s+(checkout|restore)\s+\.\s*$' }
+    - { name: git-clean,     pattern: 'git\s+clean\s+-[a-zA-Z]*f' }
+    - { name: sql-drop,      pattern: '(?i)(DROP\s+(TABLE|DATABASE|SCHEMA)|TRUNCATE\s+TABLE)' }
+    - { name: kill-9,        pattern: 'kill\s+-9\s' }
+    - { name: chmod-777,     pattern: 'chmod\s+(-R\s+)?777' }
+    - { name: disk-destruct, pattern: '(mkfs\.|dd\s+if=)' }
+    - { name: fork-bomb,     pattern: '\(\)\s*\{' }
+
+ds-guard:
+  enabled: false              # disabled by default, enable per-project
+  scope: ''                   # e.g., 'screens-v2/' — only check files in this path
+  exclude-patterns:           # files to skip even within scope
+    - '\.md$'
+    - '(index|__preview__|__tests__|__fixtures__)'
+  rules:
+    hardcoded-colors:
+      enabled: true
+      pattern: "'#[0-9A-Fa-f]{3,8}'"
+      message: "Use DS color tokens (e.g., colors.primary[50], semantic.text.primary)"
+    blocked-imports:
+      enabled: true
+      sources: []             # e.g., ['~/components/common/']
+      message: "Import from design system path instead"
+    blocked-utils:
+      enabled: true
+      sources: []             # e.g., ['~/utils/reponsiveUtil']
+      message: "Use DS scaling utilities (e.g., scale() from design-system)"
+    hardcoded-dimensions:
+      enabled: true
+      pattern: '(width|height|padding|margin|gap):\s*[0-9]{3,}'
+      message: "Use scale(value) or spacing[n] tokens"
+
+# Frontend project hook: check DS + skeleton structure on session start
+frontend-guard:
+  enabled: false              # enable per-project for frontend repos
+  check-on-session-start: true
+  design-system:
+    required: true            # DS directory must exist
+    path: ''                  # e.g., 'src/design-system/' or '~/design-system'
+    token-files:              # files that must exist in DS
+      - 'colors'
+      - 'spacing'
+      - 'typography'
+  skeleton:
+    required-dirs: []         # e.g., ['src/screens/', 'src/components/', 'src/navigation/']
+    required-files: []        # e.g., ['src/App.tsx', 'src/theme.ts']
+
+# Terraform guard: validate plan before apply
+terraform-guard:
+  enabled: false              # enable per-project for IaC repos
+  require-plan-before-apply: true
+  block-destructive:
+    enabled: true
+    block-patterns:           # terraform plan output patterns to block
+      - 'will be destroyed'
+      - 'must be replaced'
+      - 'forces replacement'
+    max-resources-changed: 10   # block if more than N resources changing
+  require-approval:
+    - 'aws_db_instance'        # always require approval for these resource types
+    - 'aws_rds_cluster'
+    - 'aws_iam_role'
+    - 'aws_s3_bucket'
+    - 'google_sql_database_instance'
+  banned-actions:
+    - 'terraform destroy'      # block unconditionally
+    - 'terraform apply -auto-approve'  # block auto-approve in prod
+
+# TDD enforcement: tests required for every commit
+tdd-guard:
+  enabled: true               # ON by default
+  require-tests-for-commit: true
+  test-patterns:              # glob patterns that count as test files
+    - '**/*.test.*'
+    - '**/*.spec.*'
+    - '**/__tests__/**'
+  skip-for:                   # file patterns exempt from test requirement
+    - '*.md'
+    - '*.json'
+    - '*.yaml'
+    - '*.yml'
+    - '.gitignore'
+    - 'CLAUDE.md'

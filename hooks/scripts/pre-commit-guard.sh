@@ -35,4 +35,46 @@ BLOCK
   exit 2
 fi
 
+# === TDD Guard: require test files when source files are staged ===
+SCRIPT_DIR="${0:A:h}"
+if [[ -f "$SCRIPT_DIR/_config.sh" ]]; then
+  source "$SCRIPT_DIR/_config.sh"
+
+  if leo_config_enabled "tdd-guard.enabled" && leo_config_enabled "tdd-guard.require-tests-for-commit"; then
+    # Check staged files for source changes (non-test, non-config)
+    STAGED=$(git diff --cached --name-only 2>/dev/null || true)
+    HAS_SOURCE=false
+    HAS_TESTS=false
+
+    while IFS= read -r file; do
+      [[ -z "$file" ]] && continue
+      # Skip config/doc files
+      if echo "$file" | grep -qE '\.(md|json|yaml|yml)$|\.gitignore|CLAUDE\.md'; then
+        continue
+      fi
+      # Check if it's a test file
+      if echo "$file" | grep -qE '\.(test|spec)\.|__tests__/'; then
+        HAS_TESTS=true
+      else
+        HAS_SOURCE=true
+      fi
+    done <<< "$STAGED"
+
+    if [[ "$HAS_SOURCE" == "true" ]] && [[ "$HAS_TESTS" == "false" ]]; then
+      cat <<BLOCK
+COMMIT BLOCKED — TDD required: no test files in staged changes
+
+Source files are staged but no test files detected.
+TDD is mandatory: write tests before or alongside source changes.
+
+Options:
+  1. Add test files to the commit
+  2. Run /test to generate tests for your changes
+  3. Disable tdd-guard in .leo-hooks.yaml (not recommended)
+BLOCK
+      exit 2
+    fi
+  fi
+fi
+
 exit 0

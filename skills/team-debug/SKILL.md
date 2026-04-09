@@ -10,6 +10,13 @@ user-invocable: true
 Executes the competing hypotheses pattern with **parallel agents**.
 Verifies multiple hypotheses simultaneously vs `/investigate`'s sequential approach.
 
+## Issue Tracking
+
+```bash
+gh issue create --title "debug: {problem}" --body "Debug tracking" --label "bug"
+```
+Each hypothesis agent comments results to this issue.
+
 ## Usage
 
 ```

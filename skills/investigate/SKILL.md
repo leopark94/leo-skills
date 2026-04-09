@@ -19,6 +19,13 @@ Automatically deploys parallel agent teams for complex bugs based on bug complex
 /investigate --error "<error msg>"
 ```
 
+## Issue Tracking
+
+```bash
+gh issue create --title "investigate: {problem}" --body "Investigation tracking" --label "bug"
+```
+All agents comment diagnosis results to this issue.
+
 ## Step 0: Mode Selection
 
 **Default is PARALLEL (team mode).** Sequential requires explicit opt-out.

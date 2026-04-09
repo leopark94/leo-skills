@@ -142,13 +142,32 @@ Deeper analysis and faster parallel processing than single-agent approaches.
 | Incident | incident-commander | opus | full | Production incident response |
 | Performance | perf-monitor | sonnet | fork | Performance profiling |
 
-#### Team Orchestrator Skills
+#### Orchestrator Skills (22 total)
 
 | Skill | Team Composition | Pattern |
 |-------|-----------------|---------|
-| `/team-review` | reviewer + type-analyzer + test-analyzer + error-hunter + security-auditor | 5 parallel |
+| `/sprint` | PM -> architect -> contract -> test-writer -> developer -> evaluator | Full harness |
 | `/team-feature` | architect -> explorer -> (implement) -> [4 parallel verification] -> simplifier | Sequential+parallel |
+| `/team-review` | reviewer + type-analyzer + test-analyzer + error-hunter + security-auditor | 5 parallel |
 | `/team-debug` | explorer -> (hypotheses) -> [5 parallel verification] -> (fix) | Sequential+parallel |
+| `/review` | reviewer + conditional specialists (auto-scale by change scope) | Adaptive parallel |
+| `/investigate` | explorer -> [5 hypothesis agents parallel] | Competing hypotheses |
+| `/hotfix` | incident-commander -> debugger -> developer -> reviewer | Fast-path |
+| `/refactor` | architect -> refactorer -> [reviewer + type-analyzer + test-analyzer] | Safe restructure |
+| `/migrate` | architect -> db-specialist -> migration-writer -> [test-writer + reviewer] | DB migration |
+| `/release` | release-coordinator -> reviewer -> git-master | Release automation |
+| `/docs` | architect -> explorer -> doc-writer -> reviewer | Documentation |
+| `/deploy` | [ci-engineer + env-manager] -> developer -> evaluator | Deployment |
+| `/audit` | [security-auditor + dependency-auditor + perf-monitor] -> architect | 3 parallel audit |
+| `/test` | test-analyzer -> test-writer -> developer -> integration-tester -> evaluator | Full TDD |
+| `/api` | api-designer -> api-developer -> [api-contract-validator + reviewer] -> integration-tester | API lifecycle |
+| `/setup` | architect -> scaffolder -> [config-writer + env-manager + ci-engineer] | Project scaffold |
+| `/incident` | incident-commander -> [3 debuggers parallel] -> developer -> evaluator | Incident response |
+| `/optimize` | perf-monitor -> architect -> performance-optimizer -> [perf-monitor + reviewer] | Performance |
+| `/db` | db-specialist -> architect -> migration-writer -> [test-writer + reviewer] -> fixture-factory | DB design |
+| `/guard` | MASTER.md compliance check | Pre/post work |
+| `/progress` | Multi-session work tracking via JSON | Progress file |
+| `/discover` | Search + install community skills | Discovery |
 
 #### Spawn Strategy
 
@@ -312,9 +331,24 @@ secrets:
 - `leo-cli/docs/SECRET-SYNC.md` — Sync protocol
 - `leo-cli/docs/COMMANDS.md` — Full command reference
 
-### 6.2 File Protection
-- `.env*`, `*.pem`, `*.key`, `.git/` -> blocked via PreToolUse hook
+### 6.2 File Protection & Hook Configuration
+
+#### `.leo-hooks.yaml` — Config-driven hook system
+```
+Priority: project/.leo-hooks.yaml > ~/.leo/hooks.yaml > ~/utils/leo-skills/hooks/leo-hooks.yaml
+```
+Configurable hooks: `detect-secrets`, `dangerous-commands`, `ds-guard`
+
+#### Protection Rules
+- `.env*` -> allowed (secrets scanned by detect-secrets)
+- `*.pem`, `*.key`, `.git/` -> blocked via PreToolUse hook
+- Destructive Bash commands -> blocked via dangerous-command-guard
 - `package-lock.json`, `pnpm-lock.yaml` -> direct editing forbidden
+
+#### Agent Enforcement (agent-guard.sh)
+- Generic agents -> BLOCKED (must use subagent_type from agents/)
+- File-modifying agents (Edit/Write in tools) -> worktree isolation required
+- Detection: dynamic from agent `.md` frontmatter `tools:` field
 
 ### 6.3 Prompt Injection
 - Flag injection-suspicious results from external tools

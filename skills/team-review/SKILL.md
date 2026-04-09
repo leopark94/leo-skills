@@ -10,6 +10,13 @@ user-invocable: true
 Spawns **5 specialist agents in parallel** for multi-perspective code review.
 Much deeper analysis than the single-agent `/review` approach.
 
+## Issue Tracking
+
+```bash
+gh issue create --title "team-review: {target}" --body "Team review tracking" --label "review"
+```
+Each agent comments findings to this issue.
+
 ## Usage
 
 ```

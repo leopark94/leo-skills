@@ -19,6 +19,13 @@ Analyzes change scope and nature to **automatically determine review depth**.
 /review --quick            # force single review
 ```
 
+## Issue Tracking
+
+For PR reviews or significant code reviews, create/reference a GitHub issue:
+```bash
+gh issue create --title "review: {target}" --body "Code review tracking" --label "review"
+```
+
 ## Step 0: Mode Selection
 
 **Default is STANDARD (team mode).** Solo requires explicit opt-out.

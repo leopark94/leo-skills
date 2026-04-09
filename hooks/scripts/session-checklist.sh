@@ -21,6 +21,13 @@ All tasks default to agent team deployment:
 - /investigate -> PARALLEL mode (per-hypothesis agent verification)
 - Solo mode only via explicit opt-out: --light, --quick, --serial flags
 - After 3+ edits, /review is enforced before commit (pre-commit-guard hook)
+
+## IMPORTANT: Agent Enforcement (agent-guard.sh active)
+
+- NEVER use generic/general-purpose agents — BLOCKED by hook
+- Every Agent call MUST use subagent_type from ~/utils/leo-skills/agents/
+- If no agent exists for a task: CREATE one at agents/<name>.md first, then use it
+- For parallel work: use TeamCreate (native teammates), NEVER tmux
 CONTEXT
 
 # Check CLAUDE.md exists for leo-* projects
@@ -54,5 +61,34 @@ if command -v leo &>/dev/null; then
     if [[ $MISSING -gt 0 ]]; then
       echo "WARNING: ${MISSING} required secret(s) missing! Run \`leo secret check\` to verify."
     fi
+  fi
+fi
+
+# Frontend project check: DS + skeleton validation
+SCRIPT_DIR="${0:A:h}"
+if [[ -f "$SCRIPT_DIR/_config.sh" ]]; then
+  source "$SCRIPT_DIR/_config.sh"
+
+  if leo_config_enabled "frontend-guard.enabled"; then
+    DS_PATH=$(leo_config_get "frontend-guard.design-system.path" "")
+    if [[ -n "$DS_PATH" ]] && [[ ! -d "$PROJECT_ROOT/$DS_PATH" ]]; then
+      echo "WARNING: Design system directory not found ($DS_PATH). Create it or update .leo-hooks.yaml"
+    fi
+
+    REQUIRED_DIRS=$(leo_config_get_array "frontend-guard.skeleton.required-dirs")
+    if [[ -n "$REQUIRED_DIRS" ]]; then
+      while IFS= read -r dir; do
+        [[ -z "$dir" ]] && continue
+        if [[ ! -d "$PROJECT_ROOT/$dir" ]]; then
+          echo "WARNING: Required directory missing: $dir"
+        fi
+      done <<< "$REQUIRED_DIRS"
+    fi
+
+    echo "Frontend project detected — DS guard active, check .leo-hooks.yaml for rules"
+  fi
+
+  if leo_config_enabled "tdd-guard.enabled"; then
+    echo "TDD enforced — tests required for every commit"
   fi
 fi

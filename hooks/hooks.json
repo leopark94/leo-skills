@@ -46,6 +46,10 @@
         {
           "type": "command",
           "command": "bash ~/utils/leo-skills/hooks/scripts/protect-files.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/ds-guard.sh"
         }
       ]
     },
@@ -55,6 +59,27 @@
         {
           "type": "command",
           "command": "bash ~/utils/leo-skills/hooks/scripts/pre-commit-guard.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/dangerous-command-guard.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/detect-secrets.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/terraform-guard.sh"
+        }
+      ]
+    },
+    {
+      "matcher": "Agent",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/agent-guard.sh"
         }
       ]
     }

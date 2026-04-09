@@ -1,47 +1,47 @@
 #!/bin/zsh
 # detect-secrets.sh — PreToolUse hook: detect secrets in file content
-# Blocks Edit/Write when API keys, tokens, or credentials are detected
+# Blocks Edit/Write/Bash when API keys, tokens, or credentials are detected
 # Recommends storing via leo secret (leo-cli Keychain)
 
 set -euo pipefail
 
-# Read hook data from stdin
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.command // empty')
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // .tool_input.new_string // empty')
 
-# Only inspect Edit/Write tools
-if [[ "$TOOL_NAME" != "Write" && "$TOOL_NAME" != "Edit" ]]; then
+# Only inspect Edit/Write/Bash tools
+if [[ "$TOOL_NAME" != "Write" && "$TOOL_NAME" != "Edit" && "$TOOL_NAME" != "Bash" ]]; then
   exit 0
+fi
+
+# For Bash tool: inspect the command for secrets
+if [[ "$TOOL_NAME" == "Bash" ]]; then
+  COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  [[ -z "$COMMAND" ]] && exit 0
+  CONTENT="$COMMAND"
+  FILE_PATH=""
 fi
 
 # Secret patterns
 PATTERNS=(
-  # API Keys
-  'sk-[a-zA-Z0-9]{20,}'          # OpenAI/Anthropic API key
-  'AKIA[0-9A-Z]{16}'             # AWS Access Key
-  'ghp_[a-zA-Z0-9]{36}'          # GitHub PAT
-  'gho_[a-zA-Z0-9]{36}'          # GitHub OAuth
-  'glpat-[a-zA-Z0-9\-]{20}'     # GitLab PAT
-  'xoxb-[0-9]+-[a-zA-Z0-9]+'    # Slack Bot Token
-  'xoxp-[0-9]+-[a-zA-Z0-9]+'    # Slack User Token
-  # Generic patterns
-  'AIza[0-9A-Za-z\-_]{35}'      # Google API Key
-  'ya29\.[0-9A-Za-z\-_]+'       # Google OAuth
-  # Private keys
+  'sk-[a-zA-Z0-9]{20,}'
+  'AKIA[0-9A-Z]{16}'
+  'ghp_[a-zA-Z0-9]{36}'
+  'gho_[a-zA-Z0-9]{36}'
+  'glpat-[a-zA-Z0-9\-]{20}'
+  'xoxb-[0-9]+-[a-zA-Z0-9]+'
+  'xoxp-[0-9]+-[a-zA-Z0-9]+'
+  'AIza[0-9A-Za-z\-_]{35}'
+  'ya29\.[0-9A-Za-z\-_]+'
   '-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----'
   '-----BEGIN OPENSSH PRIVATE KEY-----'
-  # Passwords in config
-  'password\s*[:=]\s*["\x27][^"\x27]{8,}'
-  'secret\s*[:=]\s*["\x27][^"\x27]{8,}'
-  'token\s*[:=]\s*["\x27][^"\x27]{20,}'
 )
 
-# Block sensitive file types unconditionally
-if [[ "$FILE_PATH" =~ \.env(\..*)?$ ]] || [[ "$FILE_PATH" =~ \.pem$ ]] || [[ "$FILE_PATH" =~ \.key$ ]]; then
+# Block sensitive file types (.pem, .key — NOT .env, which is allowed)
+if [[ -n "$FILE_PATH" ]] && ([[ "$FILE_PATH" =~ \.pem$ ]] || [[ "$FILE_PATH" =~ \.key$ ]]); then
   echo "BLOCKED: Direct editing of sensitive files is forbidden ($FILE_PATH)"
-  echo "-> Store environment variables in Keychain via 'leo secret add <name>' (leo-cli)"
+  echo "-> Store in Keychain via leo secret add <name> (leo-cli)"
   exit 2
 fi
 
@@ -52,11 +52,24 @@ if [[ -n "$CONTENT" ]]; then
       MATCHED=$(echo "$CONTENT" | grep -oP "$pattern" 2>/dev/null | head -1 || echo "$CONTENT" | grep -oE "$pattern" 2>/dev/null | head -1)
       REDACTED="${MATCHED:0:8}***"
       echo "BLOCKED: Secret detected — $REDACTED"
-      echo "-> Store in Keychain via 'leo secret add <name>' then reference as environment variable (leo-cli)"
-      echo "-> Use process.env.XXX or \$XXX in code"
+      echo "-> Store in Keychain via leo secret add <name> then use process.env.XXX"
       exit 2
     fi
   done
+fi
+
+# Bash-specific: detect secrets in shell commands
+if [[ "$TOOL_NAME" == "Bash" ]] && [[ -n "$CONTENT" ]]; then
+  if echo "$CONTENT" | grep -qE "export\s+\w*(KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL)\w*\s*=\s*[a-zA-Z0-9_-]{8,}"; then
+    echo "BLOCKED: Secret export detected in Bash command"
+    echo "-> Use leo secret add <name>"
+    exit 2
+  fi
+  if echo "$CONTENT" | grep -qE 'curl\s.*-H\s.*Authorization:\s*Bearer\s+[a-zA-Z0-9_./-]{20,}'; then
+    echo "BLOCKED: Hardcoded auth token in curl command"
+    echo "-> Use leo secret get <name> to inject the token"
+    exit 2
+  fi
 fi
 
 exit 0

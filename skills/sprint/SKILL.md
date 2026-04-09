@@ -19,6 +19,14 @@ developer writes Green code, Evaluator tests live app with Playwright.
 /sprint --full "complex auth system"
 ```
 
+## Issue Tracking
+
+Before any work, create a GitHub issue:
+```bash
+gh issue create --title "sprint: {feature}" --body "Sprint tracking issue" --label "sprint"
+```
+All agents comment progress to this issue. Close on completion.
+
 ## Step 0: Mode Selection
 
 **Default is STANDARD.** Solo requires explicit `--light`.

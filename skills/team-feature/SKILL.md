@@ -17,6 +17,14 @@ Unlike `/sprint`'s harness pattern, deploys **specialist agent teams at each sta
 /team-feature --spec <spec-file.md>    # spec file based
 ```
 
+## Issue Tracking
+
+Before any work, create a GitHub issue:
+```bash
+gh issue create --title "feature: {feature}" --body "Feature development tracking" --label "feature"
+```
+All agents comment progress to this issue. Close on completion.
+
 ## Team Composition & Execution Flow
 
 ```

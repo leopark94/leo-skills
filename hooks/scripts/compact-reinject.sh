@@ -20,4 +20,11 @@ cat <<'CONTEXT'
 - Deploy specialist agents (architect, reviewer, type-analyzer, test-analyzer, error-hunter, simplifier, security-auditor) in parallel as needed
 - Solo mode only via explicit opt-out: --light, --quick, --serial
 - /review enforced before commit (marker auto-created after 3+ edits)
+
+## IMPORTANT: Agent Enforcement (agent-guard.sh active)
+
+- NEVER use generic/general-purpose agents — BLOCKED by hook
+- Every Agent call MUST use subagent_type from ~/utils/leo-skills/agents/
+- No matching agent? CREATE one at agents/<name>.md first, then use it
+- Parallel work: TeamCreate (native teammates), NEVER tmux
 CONTEXT
