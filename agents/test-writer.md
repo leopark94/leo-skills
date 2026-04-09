@@ -760,6 +760,64 @@ Edge cases:
   - Result highlighting accuracy
 ```
 
+### Delete / Soft Delete / Data Lifecycle
+
+```
+Soft Delete:
+  - Delete → record still in DB, deletedAt set
+  - Deleted record excluded from default queries (findAll, search)
+  - Deleted record accessible via explicit includeDeleted flag
+  - Deleted record accessible by direct ID lookup? (policy decision)
+  - Double delete (already soft-deleted) → idempotent, no error
+  - Restore (undelete) → deletedAt cleared, appears in queries again
+  - Re-delete after restore → works correctly
+
+Hard Delete:
+  - Delete → record permanently gone
+  - Delete non-existent → 404 or idempotent 204?
+  - Delete with cascade (parent has children) → children also deleted
+  - Delete with restrict (parent has children) → blocked with error
+  - Delete with set-null (FK set to null) → children orphaned correctly
+
+Referential Integrity:
+  - Soft-deleted parent → children still reference it
+  - Query children of soft-deleted parent → depends on policy
+  - Join queries → soft-deleted records excluded from joins
+  - Aggregation (COUNT, SUM) → excludes soft-deleted
+  - Unique constraint + soft delete ("same email" reusable after delete?)
+  - Index includes soft-deleted? (partial index on deletedAt IS NULL)
+
+List/Search After Delete:
+  - GET /items after delete → deleted item NOT in list
+  - GET /items?includeDeleted=true → deleted item IN list with flag
+  - GET /items/:id (deleted) → 404 (default) or 200 with deleted flag?
+  - Search results → soft-deleted excluded
+  - Pagination count → excludes soft-deleted
+  - Filter by status + soft delete interaction
+  - Sort order stability after delete
+
+Cascade/Side Effects:
+  - Delete user → user's posts/comments/sessions? (cascade policy)
+  - Delete user → assigned tasks reassigned or orphaned?
+  - Delete triggers (events, webhooks, notifications)
+  - Delete audit log → who deleted, when, reversible?
+  - GDPR/privacy → hard delete PII even if soft delete elsewhere
+  - Scheduled hard delete (soft delete → 30 days → purge)
+
+Concurrency:
+  - Delete while someone else is editing → conflict
+  - Delete while someone else is viewing → graceful 404
+  - Bulk delete (100+ records) → transaction, partial failure?
+  - Delete during export/backup → consistency
+
+API Response:
+  - DELETE /items/:id → 204 No Content (or 200 with body?)
+  - DELETE /items/:id (not found) → 404 or 204 idempotent?
+  - DELETE /items/:id (already deleted) → 404 or 204?
+  - Bulk DELETE → partial success response format
+  - Undo endpoint (POST /items/:id/restore) → 200
+```
+
 ### Use Template Selection
 
 When test-writer encounters code that matches these patterns, it MUST apply the domain-specific template ON TOP of the 7-layer framework. These are additive, not replacements.
@@ -785,6 +843,7 @@ Detection heuristic:
   - Function uses upload, multer, sharp, image → Media template
   - Function uses rateLimit, throttle, 429 → Rate Limit template
   - Function uses search, filter, query, find → Search template
+  - Function uses delete, remove, softDelete, deletedAt, restore, purge → Delete template
 ```
 
 ## Red Phase Verification
