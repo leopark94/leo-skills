@@ -373,7 +373,14 @@ Configurable hooks: `detect-secrets`, `dangerous-commands`, `ds-guard`
 - Dashboard ports: leo-bot(3848), leo-secretary(3849), slack(3847)
 - `deploy.sh` script for deployment
 
-### 7.4 Error Handling
+### 7.4 Data Access (No JOIN)
+- **SQL JOIN 금지** — 테이블별 개별 조회 후 앱 레벨 머지
+- Repository: single-table queries only (findById, findByIds)
+- Application: batch fetch (WHERE id IN (...)) + app-level merge
+- N+1 금지: loop fetch 대신 batch fetch
+- Soft delete: deletedAt 기반, 조회 시 기본 제외
+
+### 7.5 Error Handling
 - `withRetry()` wrapper
 - Error suppression forbidden — minimum logging required
 - Hard-coded config forbidden

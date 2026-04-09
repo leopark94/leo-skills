@@ -760,6 +760,46 @@ Edge cases:
   - Result highlighting accuracy
 ```
 
+### Data Fetching / App-Level Merge (No JOIN)
+
+```
+Rule: NEVER use SQL JOIN. Fetch separately, merge in application code.
+
+Correct pattern:
+  - Fetch users: SELECT * FROM users WHERE id IN (1,2,3)
+  - Fetch orders: SELECT * FROM orders WHERE user_id IN (1,2,3)
+  - Merge in app: users.map(u => ({ ...u, orders: orders.filter(o => o.userId === u.id) }))
+
+Scenarios — Merge Correctness:
+  - 1:1 relation merge → each parent has exactly one child
+  - 1:N relation merge → parent has array of children
+  - M:N relation merge → junction table fetched, both sides assembled
+  - Missing child → parent still returned (no child, not excluded)
+  - Orphan child (parent deleted) → excluded or flagged
+  - Order preserved after merge (sort applied post-merge)
+
+N+1 Detection (MUST catch):
+  - Loop fetch: for (user of users) { await getOrders(user.id) } → FORBIDDEN
+  - Batch fetch: getOrdersByUserIds([1,2,3]) → CORRECT
+  - Test: mock repo, assert findByIds called ONCE (not N times)
+  - Nested N+1: users → orders → order_items (3 batch fetches, not N*M)
+
+Edge Cases:
+  - Empty parent list → no child fetch needed (skip query)
+  - Parent with 0 children → included with empty array
+  - Very large IN clause (1000+ IDs) → chunking
+  - Duplicate IDs in IN clause → deduplicated
+  - null FK → child not linked to any parent
+  - Merge key mismatch (string ID vs number ID) → type consistency
+  - Circular reference in merge (A→B→A) → detection/prevention
+
+Performance:
+  - 2 queries (batch) faster than 1 complex JOIN → verify
+  - Pagination with merge → fetch page of parents, then batch children
+  - Count query separate from data query
+  - Caching individual entities vs merged result
+```
+
 ### Delete / Soft Delete / Data Lifecycle
 
 ```
@@ -844,6 +884,7 @@ Detection heuristic:
   - Function uses rateLimit, throttle, 429 → Rate Limit template
   - Function uses search, filter, query, find → Search template
   - Function uses delete, remove, softDelete, deletedAt, restore, purge → Delete template
+  - Function fetches from multiple repos/tables, merges, assembles → Data Merge template
 ```
 
 ## Red Phase Verification
