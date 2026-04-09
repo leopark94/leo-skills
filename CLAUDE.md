@@ -36,7 +36,7 @@ leo-skills/
 
 1. **NEVER use generic/general-purpose agents.** Every `Agent` tool call MUST specify `subagent_type` matching a definition in `agents/` directory.
 2. **If no matching agent exists** for a task, CREATE a new agent definition at `agents/<name>.md` first, then use it via `subagent_type`.
-3. **54 specialized agents available** — always pick the closest match before creating new ones.
+3. **57 specialized agents available** — always pick the closest match before creating new ones.
 4. **agent-guard.sh hook enforces this** — generic Agent calls will be BLOCKED at runtime.
 5. **For parallel work, use TeamCreate** (native teammates), prefer over tmux. Team leader spawns and manages teammates via separate terminal instances.
 6. **File-modifying agents MUST use `isolation: "worktree"`** — always work on isolated copy. Read-only agents (explorer, reviewer, analyzer, etc.) don't need worktree.

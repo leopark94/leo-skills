@@ -84,7 +84,8 @@ Merge results into a single issue:
 1. Planner's structure → issue body
 2. Analyst's assessment → appended as "Technical Analysis" section
 3. Create issue via `gh issue create`
-4. Show issue URL to user
+4. **Write issue number to `.claude-active-issue` marker** — `echo {number} > .claude-active-issue`
+5. Show issue URL to user
 
 If analyst says SPIKE FIRST or RETHINK → flag to user before creating.
 
@@ -113,7 +114,7 @@ Agent(name: "impact-check", subagent_type: "issue-analyst", run_in_background: t
 ### After Both Complete
 
 1. Post combined review as issue comment
-2. If APPROVE from both → close issue
+2. If APPROVE from both → close issue + **remove `.claude-active-issue` marker** (`rm -f .claude-active-issue`)
 3. If NEEDS WORK → list specific action items, keep issue open
 4. Update `claude-progress.json`
 

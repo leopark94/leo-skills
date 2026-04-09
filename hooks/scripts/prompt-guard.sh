@@ -13,9 +13,17 @@ if echo "$PROMPT" | grep -qiE 'bug|error|broken|fix|crash|fail|not working|excep
   HINTS="${HINTS}\nHint: Bug/error detected -> try /investigate (PARALLEL default, team hypothesis verification)"
 fi
 
-# 2. Feature implementation keywords -> recommend /sprint
+# 2. Feature implementation keywords -> recommend /sprint + issue check
 if echo "$PROMPT" | grep -qiE 'implement|build|create|add|feature|develop|make'; then
   HINTS="${HINTS}\nHint: Feature implementation detected -> try /sprint (STANDARD default, architect + verification team)"
+  # Check for active issue marker
+  PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+  if [[ ! -f "$PROJECT_ROOT/.claude-active-issue" ]]; then
+    HINTS="${HINTS}\nIMPORTANT: No active issue found. Run /issue create BEFORE starting work."
+  else
+    ACTIVE_ISSUE=$(cat "$PROJECT_ROOT/.claude-active-issue" 2>/dev/null)
+    HINTS="${HINTS}\nActive issue: #${ACTIVE_ISSUE}"
+  fi
 fi
 
 # 3. Review keywords -> recommend /review

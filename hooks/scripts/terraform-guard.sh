@@ -7,6 +7,9 @@ set -euo pipefail
 
 # Load shared config
 SCRIPT_DIR="${0:A:h}"
+if [[ ! -f "$SCRIPT_DIR/_config.sh" ]]; then
+  exit 0
+fi
 source "$SCRIPT_DIR/_config.sh"
 
 # Check if terraform guard is enabled

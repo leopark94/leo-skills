@@ -4,8 +4,8 @@
 
 INPUT=$(cat)
 
-# Detect git commit in Bash command
-COMMAND=$(echo "$INPUT" | jq -r '.command // empty' 2>/dev/null)
+# Detect git commit in Bash command (handle both input formats)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // .command // empty' 2>/dev/null)
 [[ -z "$COMMAND" ]] && exit 0
 
 # Match git commit pattern (git commit, git commit -m, etc.)
@@ -71,6 +71,32 @@ Options:
   1. Add test files to the commit
   2. Run /test to generate tests for your changes
   3. Disable tdd-guard in .leo-hooks.yaml (not recommended)
+BLOCK
+      exit 2
+    fi
+  fi
+fi
+
+# === Issue Reference Guard: commit message must contain issue number ===
+# The full command contains the commit message — check the entire command string
+COMMIT_MSG="$COMMAND"
+
+# If we can extract the message, check for issue reference
+if [[ -n "$COMMIT_MSG" ]]; then
+  # Check for #N pattern (issue reference)
+  if ! echo "$COMMIT_MSG" | grep -qE '#[0-9]+'; then
+    # Allow certain commit types without issue reference
+    if ! echo "$COMMIT_MSG" | grep -qE '(chore|docs|style|ci|build|initial):'; then
+      cat <<BLOCK
+COMMIT BLOCKED — Issue reference required
+
+Commit message must include a GitHub issue number (e.g., #123).
+Format: "feat: implement login (#42)"
+
+If no issue exists yet, run:
+  /issue create "description"
+
+Exempt commit types (no issue needed): chore, docs, style, ci, build, initial
 BLOCK
       exit 2
     fi
