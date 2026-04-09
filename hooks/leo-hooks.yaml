@@ -24,6 +24,20 @@ detect-secrets:
     block-secret-exports: true
     block-hardcoded-auth-headers: true
 
+protect-files:
+  enabled: true
+  patterns:
+    - '\.git/'
+    - 'package-lock\.json$'
+    - 'pnpm-lock\.yaml$'
+    - 'yarn\.lock$'
+    - 'Podfile\.lock$'
+    - '\.DS_Store$'
+    - 'node_modules/'
+    - '\.credentials'
+    - 'serviceAccountKey'
+  custom-patterns: []    # project-specific additions
+
 dangerous-commands:
   enabled: true
   block:
