@@ -501,6 +501,265 @@ Edge cases:
   - Hidden files (dotfiles)
 ```
 
+### JSON Parsing / Serialization
+
+```
+Valid:
+  - Standard JSON object, array, nested
+  - All JSON types (string, number, boolean, null, array, object)
+  - Unicode in values ("name": "김철수")
+  - Escaped characters ("\n", "\t", "\"")
+
+Invalid:
+  - Malformed JSON ("{ broken", trailing comma)
+  - Single quotes ('key': 'val')
+  - Comments in JSON (// not valid)
+  - Undefined (not a JSON value)
+  - Empty string → ParseError (not empty object)
+
+Edge cases:
+  - Deeply nested (100+ levels) → stack overflow / depth limit
+  - Very large payload (10MB+) → size limit
+  - Circular reference → detection and error
+  - Duplicate keys ({"a":1, "a":2}) → last wins or error?
+  - BigInt / large numbers (loss of precision)
+  - NaN, Infinity (not valid JSON)
+  - BOM (byte order mark) at start
+```
+
+### Event / Callback / Pub-Sub
+
+```
+Normal:
+  - Subscribe → emit → handler called with correct args
+  - Multiple subscribers → all called
+  - Unsubscribe → no longer called
+
+Edge cases:
+  - Emit with no subscribers → no error
+  - Subscribe twice with same handler → called once or twice?
+  - Unsubscribe during emit (handler removes itself)
+  - Emit order guarantee (FIFO?)
+  - Error in one handler → other handlers still called?
+  - Async handlers → all awaited or fire-and-forget?
+  - Memory leak (subscribe without unsubscribe)
+  - Event with no data vs null data vs undefined
+  - Wildcard / pattern subscriptions (if supported)
+```
+
+### Cache
+
+```
+Normal:
+  - Cache miss → compute + store → return
+  - Cache hit → return without computing
+  - TTL expiry → re-compute
+
+Edge cases:
+  - Concurrent cache miss (thundering herd / stampede)
+  - Cache invalidation → subsequent miss
+  - Stale-while-revalidate behavior
+  - Cache key collision (different inputs, same key)
+  - Cache with null/undefined value (is "no value" cached?)
+  - Cache size limit → eviction (LRU/LFU)
+  - Serialization of complex objects in cache
+  - Cache warm-up on cold start
+  - Distributed cache consistency (if applicable)
+```
+
+### Queue / Async Job Processing
+
+```
+Normal:
+  - Enqueue → process → complete
+  - FIFO ordering maintained
+  - Result/callback after completion
+
+Edge cases:
+  - Job fails → retry with backoff
+  - Max retries exceeded → dead letter queue
+  - Duplicate job detection (idempotency)
+  - Job timeout → mark failed + retry
+  - Backpressure (queue full → reject or block?)
+  - Concurrent consumers → no double processing
+  - Poison message (always fails → doesn't block queue)
+  - Priority queue ordering
+  - Graceful shutdown (finish current job, stop accepting new)
+  - Job payload too large
+```
+
+### Encryption / Hashing / Crypto
+
+```
+Normal:
+  - Hash produces consistent output for same input
+  - Different inputs → different hashes
+  - Encrypt → decrypt → original plaintext
+
+Edge cases:
+  - Empty string input
+  - Very long input (1MB+)
+  - Unicode / binary input
+  - Wrong key → DecryptionError (not garbled output)
+  - Key length validation (too short / too long)
+  - Salt uniqueness (same password → different hash)
+  - Timing attack resistance (constant-time comparison)
+  - Algorithm upgrade path (bcrypt cost factor, argon2 params)
+  - One-way hash used for encryption by mistake → detect
+  - IV/nonce reuse → vulnerability (test prevention)
+```
+
+### Config / Environment Variables
+
+```
+Valid:
+  - All required vars present → config object
+  - Optional vars missing → defaults applied
+  - Type conversion ("3000" → 3000, "true" → true)
+
+Invalid:
+  - Required var missing → startup error (fail fast)
+  - Wrong type ("abc" for port number) → validation error
+  - Empty string for required var → treated as missing
+
+Edge cases:
+  - Boolean edge cases ("0", "false", "FALSE", "" → false)
+  - Number edge cases ("0", "-1", "3.14", "NaN")
+  - Whitespace in values (" value " → trimmed?)
+  - Multi-line values
+  - Special characters in values (quotes, $, =)
+  - Overriding order (env > .env.local > .env > defaults)
+  - Sensitive vars not logged/exposed
+  - Config reload without restart (if supported)
+```
+
+### Logging / Observability
+
+```
+Normal:
+  - Log at correct level (info, warn, error)
+  - Structured format (JSON with timestamp, level, message)
+  - Context fields included (requestId, userId)
+
+Edge cases:
+  - PII masking (email: "u***@example.com", not raw)
+  - Password/token never in logs → grep test
+  - Error stack traces included for errors
+  - Very long message → truncation
+  - Circular objects in log context → no crash
+  - Log level filtering (debug not in production)
+  - High-volume logging → no memory leak
+  - Async logging → no lost messages on crash
+```
+
+### WebSocket / Real-time
+
+```
+Normal:
+  - Connect → receive messages → close
+  - Send message → server receives
+  - Broadcast → all clients receive
+
+Edge cases:
+  - Connection drop → auto-reconnect
+  - Reconnect → re-subscribe to channels
+  - Message during reconnect → queued or lost?
+  - Heartbeat/ping-pong → timeout detection
+  - Message order guarantee
+  - Large message (> frame size limit)
+  - Binary vs text messages
+  - Concurrent send from multiple sources
+  - Server-initiated close (going away, error)
+  - Auth token expiry during connection
+```
+
+### i18n / Localization
+
+```
+Normal:
+  - Known locale → correct translation
+  - Date format per locale (MM/DD vs DD/MM)
+  - Number format per locale (1,000.00 vs 1.000,00)
+
+Edge cases:
+  - Unknown locale → fallback to default
+  - Missing translation key → key shown (not crash)
+  - RTL languages (Arabic, Hebrew) → direction correct
+  - Pluralization rules (English: 1 item/2 items, Russian: 1/2-4/5+)
+  - Interpolation with HTML → XSS prevention
+  - Very long translations → UI overflow
+  - Unicode normalization (NFC vs NFD)
+  - Emoji in translations
+  - Gender-specific translations (if applicable)
+  - Nested interpolation / recursive translation
+```
+
+### Image / Media / File Upload
+
+```
+Valid:
+  - JPEG, PNG, WebP, GIF → accepted
+  - Within size limit → uploaded
+  - Correct dimensions → processed
+
+Invalid:
+  - Unsupported format (.exe renamed to .jpg) → rejected by magic bytes
+  - Over size limit → 413
+  - Zero-byte file → rejected
+  - Corrupted file (truncated) → error, not crash
+
+Edge cases:
+  - EXIF data with GPS → stripped for privacy
+  - Animated GIF → preserved or first frame?
+  - Very large dimensions (50000x50000) → memory limit
+  - HEIC/HEIF support
+  - SVG with embedded script → XSS vector, block
+  - Filename with path traversal ("../../evil.jpg")
+  - Duplicate filename handling
+  - Concurrent upload of same file
+  - Upload interruption → partial file cleanup
+```
+
+### Rate Limiting / Throttling
+
+```
+Normal:
+  - Under limit → request succeeds
+  - At limit → 429 with Retry-After header
+  - After cooldown → requests succeed again
+
+Edge cases:
+  - Exactly at limit boundary
+  - Burst then sustained traffic
+  - Different rate limits per endpoint/user tier
+  - Distributed rate limiting (multiple server instances)
+  - Clock skew between servers
+  - Rate limit header accuracy (X-RateLimit-Remaining)
+  - Sliding window vs fixed window behavior
+  - Rate limit bypass attempts (IP rotation, header spoofing)
+```
+
+### Search / Filtering
+
+```
+Normal:
+  - Exact match → found
+  - Partial match / fuzzy → relevant results
+  - No match → empty result (not error)
+
+Edge cases:
+  - Empty query → all results or error?
+  - Special characters in query ("foo+bar", "foo bar", "foo*")
+  - SQL/NoSQL injection in search ("'; DROP TABLE;")
+  - Very long query (1000+ chars)
+  - Unicode search ("한글 검색")
+  - Case sensitivity (case-insensitive by default?)
+  - Accent sensitivity (cafe vs café)
+  - Multiple filters combined (AND/OR logic)
+  - Sort + filter + pagination interaction
+  - Result highlighting accuracy
+```
+
 ### Use Template Selection
 
 When test-writer encounters code that matches these patterns, it MUST apply the domain-specific template ON TOP of the 7-layer framework. These are additive, not replacements.
@@ -514,6 +773,18 @@ Detection heuristic:
   - Function has page, limit, offset params → Pagination template
   - Function has token, auth, login, password → Auth template
   - Function uses fs, readFile, writeFile → File template
+  - Function uses JSON.parse, JSON.stringify, serialize → JSON template
+  - Function uses EventEmitter, on, emit, subscribe → Event template
+  - Function uses cache, memoize, ttl, invalidate → Cache template
+  - Function uses queue, enqueue, job, worker → Queue template
+  - Function uses hash, encrypt, decrypt, bcrypt, salt → Crypto template
+  - Function uses process.env, config, getSettings → Config template
+  - Function uses logger, log, pino, winston → Logging template
+  - Function uses WebSocket, ws, socket.io → WebSocket template
+  - Function uses t(), i18n, locale, translate → i18n template
+  - Function uses upload, multer, sharp, image → Media template
+  - Function uses rateLimit, throttle, 429 → Rate Limit template
+  - Function uses search, filter, query, find → Search template
 ```
 
 ## Red Phase Verification
