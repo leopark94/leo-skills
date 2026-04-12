@@ -20,31 +20,72 @@ Scaffolds new agent definitions and skill definitions by analyzing existing patt
 
 ## /create agent
 
-### Step 1: Analyze Requirements
+### Phase 0: Research (explorer agent)
 
-Determine agent characteristics from the description:
+Before designing anything, understand the landscape:
 
 ```
-1. Role classification:
-   - Read-only analysis? → tools: Read, Grep, Glob | model: sonnet | context: fork
-   - Needs shell access? → add Bash
-   - Writes/modifies code? → add Edit, Write | model: opus
-   - Needs web access? → add WebFetch, WebSearch
-
-2. Model selection:
-   - opus: complex reasoning, code writing, architecture decisions
-   - sonnet: analysis, review, exploration (cheaper, parallel-safe)
-
-3. Effort level:
-   - high: complex tasks requiring deep analysis
-   - medium: standard analysis tasks
-
-4. Context:
-   - fork: read-only agents (prevents main context pollution)
-   - (omit): agents that need main context access
+Agent(name: "research-role", subagent_type: "explorer")
+  → "Research the leo-skills agent ecosystem for creating a new '{name}' agent:
+     1. List ALL existing agents: ls ~/utils/leo-skills/agents/*.md
+     2. Read 3-4 agents with similar roles to understand patterns
+     3. Identify gaps: what does '{name}' do that existing agents don't?
+     4. Check for overlap: could an existing agent handle this?
+     5. Read MASTER.md section 1.7 for agent classification rules
+     Report: role gap analysis, recommended tools/model, differentiation"
 ```
 
-### Step 2: Check for Conflicts
+If explorer finds an existing agent covers the need → suggest using it instead. Stop here.
+
+### Phase 1: Role Design (architect agent)
+
+```
+Agent(name: "design-role", subagent_type: "architect")
+  → "Design the role for a new '{name}' agent:
+     Explorer findings: {research_output}
+     
+     Define:
+     1. Exact responsibility boundary (what it does / what it does NOT)
+     2. Relationship to other agents (who calls it, who it calls)
+     3. Input: what information does it need to start?
+     4. Output: what does it produce? (format, token budget)
+     5. Tools needed:
+        - Read-only analysis → Read, Grep, Glob | model: sonnet | context: fork
+        - Shell access needed → add Bash
+        - Code writing → add Edit, Write | model: opus
+        - Web research → add WebFetch, WebSearch
+     6. Model: opus (complex/creative) vs sonnet (analysis/review)
+     7. Which skills would orchestrate this agent?
+     8. Success criteria: how do you know the agent did a good job?"
+```
+
+Present design to user. **Wait for approval.**
+
+### Phase 2: Prompt Engineering (prompt-engineer agent)
+
+```
+Agent(name: "craft-prompt", subagent_type: "prompt-engineer")
+  → "Craft the system prompt for a new '{name}' agent:
+     Role design: {architect_output}
+     
+     Requirements:
+     1. Clear identity statement (first paragraph)
+     2. Specific trigger conditions (not vague)
+     3. Step-by-step process (concrete, not abstract)
+     4. Output format template (structured markdown)
+     5. Rules section (5-10 non-negotiable constraints)
+     6. Token budget for output
+     7. Example invocations
+     
+     Quality criteria:
+     - Prompt must be unambiguous (no room for interpretation)
+     - Must include what NOT to do (negative constraints)
+     - Must reference project conventions (CLAUDE.md, MASTER.md)
+     - Must be in English
+     - Follow existing agent prompt patterns from the repo"
+```
+
+### Phase 3: Conflict Check
 
 ```bash
 # Check agent doesn't already exist
@@ -56,7 +97,7 @@ ls ~/utils/leo-skills/agents/ | grep -i "<keyword>"
 # If similar exists → suggest using existing or explain differentiation
 ```
 
-### Step 3: Generate Agent Definition
+### Phase 4: Generate Agent Definition
 
 Write to `~/utils/leo-skills/agents/<name>.md`:
 
@@ -150,26 +191,53 @@ Ready to use: Agent(subagent_type: "{name}", prompt: "...")
 
 ## /create skill
 
-### Step 1: Analyze Requirements
-
-Determine skill characteristics:
+### Phase 0: Research (explorer agent)
 
 ```
-1. Agent pipeline:
-   - Which agents does this skill orchestrate?
-   - What order? (sequential, parallel, hybrid)
-   - Which agents need worktree isolation?
-
-2. Mode selection:
-   - Does it need multiple modes? (like /review: quick/standard/deep)
-   - What triggers auto-escalation?
-
-3. Issue tracking:
-   - All skills MUST include issue tracking section
-   - gh issue create at start, comment at transitions, close at end
+Agent(name: "research-skill", subagent_type: "explorer")
+  → "Research the leo-skills skill ecosystem for creating a new '/{name}' skill:
+     1. List ALL existing skills: ls ~/utils/leo-skills/skills/*/SKILL.md
+     2. Read 2-3 skills with similar workflows
+     3. List ALL available agents: ls ~/utils/leo-skills/agents/*.md
+     4. Identify which agents this skill should orchestrate
+     5. Check overlap: could an existing skill handle this?
+     Report: workflow gap, recommended agent pipeline, pattern reference"
 ```
 
-### Step 2: Check for Conflicts
+### Phase 1: Pipeline Design (architect agent)
+
+```
+Agent(name: "design-pipeline", subagent_type: "architect")
+  → "Design the agent pipeline for '/{name}' skill:
+     Explorer findings: {research_output}
+     
+     Define:
+     1. Agent pipeline (who runs, in what order)
+     2. Sequential vs parallel vs hybrid pattern
+     3. Which agents need worktree isolation (Edit/Write in tools)
+     4. User approval gates (where to pause for user input)
+     5. Mode selection (does it need quick/standard/deep variants?)
+     6. Issue tracking integration (create, comment, close)
+     7. Error handling (what if an agent fails?)
+     8. Output format for the skill"
+```
+
+Present pipeline to user. **Wait for approval.**
+
+### Phase 2: Prompt Engineering (prompt-engineer agent)
+
+```
+Agent(name: "craft-skill-prompt", subagent_type: "prompt-engineer")
+  → "Write the SKILL.md for '/{name}':
+     Pipeline design: {architect_output}
+     
+     Follow the exact SKILL.md structure from existing skills.
+     Include: Usage, Issue Tracking, Team Composition, Phase details,
+     Agent() call examples, Report format, Rules.
+     All in English."
+```
+
+### Phase 3: Conflict Check
 
 ```bash
 # Check skill doesn't already exist
@@ -179,7 +247,7 @@ ls ~/utils/leo-skills/skills/<name>/SKILL.md 2>/dev/null
 ls ~/utils/leo-skills/skills/
 ```
 
-### Step 3: Generate Skill Definition
+### Phase 4: Generate Skill Definition
 
 Create directory and write `~/utils/leo-skills/skills/<name>/SKILL.md`:
 
