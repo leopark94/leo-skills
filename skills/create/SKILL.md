@@ -160,7 +160,7 @@ Examples:
 - Output: **{token budget} tokens max**
 ```
 
-### Step 4: Validate
+### Phase 5: Validate
 
 ```bash
 # Verify frontmatter is valid
@@ -175,7 +175,38 @@ echo "EXIT: $?"
 ls ~/utils/leo-skills/agents/*.md | wc -l
 ```
 
-### Step 5: Report
+### Phase 6: Review (critic + reviewer parallel)
+
+Spawn 2 agents to review the generated definition:
+
+```
+Agent(name: "review-design", subagent_type: "critic", run_in_background: true)
+  → "Review this new agent definition at ~/utils/leo-skills/agents/{name}.md:
+     - Does the role overlap with existing agents? (check agents/ directory)
+     - Are the responsibility boundaries clear? (what it does vs doesn't)
+     - Are the tools appropriate? (too many? too few?)
+     - Is the model choice justified? (opus vs sonnet)
+     - Are the rules enforceable and specific?
+     - Any blind spots or unstated assumptions?
+     - Would YOU know exactly what to do if given this prompt?
+     Verdict: APPROVE / REVISE (with specific changes)"
+
+Agent(name: "review-prompt", subagent_type: "reviewer", run_in_background: true)
+  → "Review the prompt quality of ~/utils/leo-skills/agents/{name}.md:
+     - Is the identity statement clear? (first paragraph)
+     - Are trigger conditions specific enough?
+     - Is the process actionable? (concrete steps, not vague)
+     - Does the output format match other agents' patterns?
+     - Are negative constraints present? (what NOT to do)
+     - Token budget defined?
+     - Would the agent produce consistent results across invocations?
+     Verdict: APPROVE / REVISE (with specific changes)"
+```
+
+**Both APPROVE → proceed to report.**
+**Any REVISE → apply changes, re-validate, re-review (max 2 rounds).**
+
+### Phase 7: Report
 
 ```markdown
 ## Agent Created
@@ -325,7 +356,7 @@ Agent(
 - All agents comment progress to issue
 ```
 
-### Step 4: Validate
+### Phase 5: Validate
 
 ```bash
 # Verify file exists
@@ -335,7 +366,32 @@ cat ~/utils/leo-skills/skills/<name>/SKILL.md | head -6
 ls -1d ~/utils/leo-skills/skills/*/SKILL.md | wc -l
 ```
 
-### Step 5: Report
+### Phase 6: Review (critic + reviewer parallel)
+
+```
+Agent(name: "review-skill-design", subagent_type: "critic", run_in_background: true)
+  → "Review this new skill at ~/utils/leo-skills/skills/{name}/SKILL.md:
+     - Does the agent pipeline make sense? (right agents, right order)
+     - Are there missing phases? (issue tracking, verification, cleanup)
+     - Does it overlap with existing skills?
+     - Are approval gates in the right places?
+     - Could the pipeline be more parallel?
+     - Are error/failure scenarios handled?
+     Verdict: APPROVE / REVISE"
+
+Agent(name: "review-skill-prompt", subagent_type: "reviewer", run_in_background: true)
+  → "Review prompt quality of ~/utils/leo-skills/skills/{name}/SKILL.md:
+     - Does it follow the SKILL.md structure from other skills?
+     - Are Agent() call examples concrete?
+     - Is the report format structured?
+     - Are rules specific and enforceable?
+     - Issue tracking present?
+     Verdict: APPROVE / REVISE"
+```
+
+**Both APPROVE → proceed. Any REVISE → fix + re-review (max 2 rounds).**
+
+### Phase 7: Report
 
 ```markdown
 ## Skill Created
@@ -343,6 +399,7 @@ ls -1d ~/utils/leo-skills/skills/*/SKILL.md | wc -l
 - File: skills/{name}/SKILL.md
 - Agents: {pipeline}
 - Pattern: {sequential|parallel|hybrid}
+- Review: APPROVED by critic + reviewer
 - Total skills: {N}
 
 Ready to use: /{name} <description>
