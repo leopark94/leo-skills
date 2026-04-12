@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: "Performs systematic code review covering quality, security, performance, and test coverage"
+description: "Systematic code review across 6 dimensions — quality, security, performance, tests, conventions, and architecture — with severity-graded findings"
 tools: Read, Grep, Glob
 model: sonnet
 effort: high
@@ -39,11 +39,33 @@ Examples:
 - [ ] Clean imports (no unused, proper ordering)
 
 ### 2. Security
-- [ ] No hard-coded secrets or credentials
-- [ ] Input validation at system boundaries
-- [ ] No SQL/Command/XSS injection vulnerabilities
-- [ ] Proper authorization checks
-- [ ] Sensitive data not exposed in logs or responses
+
+```
+Injection:
+  - [ ] User input sanitized before DB queries
+  - [ ] No string interpolation in SQL (use parameterized queries)
+  - [ ] No dynamic code evaluation with user input
+  - [ ] No shell commands with unsanitized user input (use execFile, not exec)
+  - [ ] HTML output escaped (no raw innerHTML with user data)
+
+Secrets:
+  - [ ] No hard-coded API keys, passwords, tokens
+  - [ ] No secrets in logs (grep for password, token, secret, key in log statements)
+  - [ ] .env files in .gitignore
+  - [ ] Secrets loaded from environment, not config files
+
+Auth:
+  - [ ] Protected endpoints check authentication
+  - [ ] Authorization checked (not just authentication)
+  - [ ] IDOR prevention (user can only access own resources, or role-based)
+  - [ ] Token validation on every request (not just login)
+
+Data:
+  - [ ] Passwords hashed (bcrypt/argon2, never MD5/SHA)
+  - [ ] PII not in logs (email, phone, SSN masked)
+  - [ ] Sensitive fields excluded from API responses (password, internal IDs)
+  - [ ] CORS configured restrictively (not *)
+```
 
 ### 3. Performance
 - [ ] No N+1 queries
