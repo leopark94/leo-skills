@@ -168,6 +168,52 @@ Create sub-issues for each task:
 gh issue create --title "task: {task}" --body "Parent: #{epic_number}\n{details}"
 ```
 
+### Phase 2.5: TODO Board (Task Assignment)
+
+PM creates explicit TODO items and assigns to agents. This is the actionable work board.
+
+```
+For each task in the epic:
+
+TaskCreate(
+  subject: "#{issue}: {task description}",
+  description: "Agent: {agent_name}\nIssue: #{issue}\nDepends on: {deps}\nAC: {acceptance criteria}",
+  activeForm: "{doing description}"
+)
+```
+
+TODO board format — PM maintains this at `.claude/epics/{feature}/todo.md`:
+
+```markdown
+# TODO Board — {Feature Name}
+
+## Backlog
+- [ ] #{101} Architecture blueprint → architect
+- [ ] #{102} Red tests (TDD) → test-writer  
+- [ ] #{103} Domain layer → developer (worktree)
+- [ ] #{104} API layer → api-developer (worktree)
+
+## In Progress
+- [~] #{103} Domain layer → developer — 3/5 files done
+
+## Blocked
+- [!] #{104} API layer → blocked by #{103}
+
+## Done
+- [x] #{101} Architecture blueprint → architect — 8 files, 2 ADRs
+- [x] #{102} Red tests → test-writer — 15 scenarios, all RED
+
+## Assignment Rules
+- Each TODO has: issue number, task, assigned agent, dependencies
+- Agent MUST be specified — no unassigned TODOs
+- Write agents get isolation: "worktree"
+- Parallel tasks marked and spawned in single message
+- TODO transitions: Backlog → In Progress → Done (or Blocked)
+- PM updates board at every phase transition
+```
+
+**PM announces TODO board to user before starting work.** User can reorder, reassign, or remove items.
+
 ### Phase 3: Execution & Monitoring (Develop + Deliver)
 
 PM tracks continuously. **Comment on issue at every phase transition.**

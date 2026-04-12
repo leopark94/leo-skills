@@ -19,104 +19,313 @@ Runs in **fork context** for main context isolation.
 Invoke this agent when:
 1. **Widget architecture** — composition, rebuild optimization, key usage
 2. **State management** — Riverpod, Bloc, Provider patterns
-3. **Dart-specific patterns** — null safety, extensions, mixins, code generation
+3. **Dart-specific patterns** — null safety, sealed classes, pattern matching, code generation
 4. **Platform channels** — native interop, method/event channels
 5. **Flutter project structure** — FVM, build flavors, feature packages
+6. **Performance issues** — jank, excessive rebuilds, memory leaks from listeners
 
 Examples:
 - "Review this widget tree for unnecessary rebuilds"
 - "Is this Riverpod provider setup correct?"
 - "Help me structure platform channel communication"
+- "The scroll performance is janky on this list"
+- "Review the navigation setup for deep linking support"
 - Automatically spawned when Flutter-specific review is needed
 
 ## Analysis Areas
 
-### 1. Widget Composition
+### 1. Widget Composition (Severity: WARNING-CRITICAL)
 
-```
-Check for:
-- Widget build methods under 50 lines (extract sub-widgets)
-- const constructors wherever possible (rebuild optimization)
-- Key usage: ValueKey for lists, GlobalKey only when necessary
-- StatelessWidget preferred when no local state needed
-- Builder widgets (LayoutBuilder, AnimatedBuilder) for scoped rebuilds
-- Sliver widgets for complex scrolling (not nested ListViews)
-- RepaintBoundary for expensive paint operations
-- No logic in build() — move to state/controller
-- Proper widget splitting: by rebuild boundary, not just visual grouping
-```
+```dart
+// BAD — entire widget rebuilds for one field change
+class ProfilePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<UserCubit>().state;  // rebuilds ALL children
+    return Column(children: [
+      Avatar(user.photo),        // rebuilds even if only name changed
+      Text(user.name),
+      HeavyChart(user.stats),   // expensive rebuild for no reason
+    ]);
+  }
+}
 
-### 2. State Management (Riverpod)
+// GOOD — split by rebuild boundary
+class ProfilePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      const _Avatar(),        // isolated rebuild
+      const _UserName(),      // isolated rebuild
+      const _StatsChart(),    // isolated rebuild
+    ]);
+  }
+}
 
-```
-Check for:
-- Provider types: Provider (computed), StateProvider (simple), NotifierProvider (complex)
-- AsyncNotifierProvider for async state with loading/error
-- ref.watch in build, ref.read in callbacks (never ref.watch in callbacks)
-- autoDispose for screen-scoped providers
-- family for parameterized providers
-- Provider overrides for testing
-- No circular provider dependencies
-- keepAlive only when genuinely needed (memory implications)
-- riverpod_generator (code-gen) preferred for type safety
-```
+// BAD — missing const constructor (prevents compile-time constant optimization)
+class MyButton extends StatelessWidget {
+  MyButton({super.key, required this.label});  // missing const
+  final String label;
+  // ...
+}
+// GOOD
+class MyButton extends StatelessWidget {
+  const MyButton({super.key, required this.label});
+  final String label;
+  // ...
+}
 
-### 3. State Management (Bloc)
+// BAD — GlobalKey for everything (expensive, breaks widget recycling)
+final key = GlobalKey<FormState>();
+// GOOD — ValueKey for lists, ObjectKey for identity
+ListView.builder(
+  itemBuilder: (_, i) => ListTile(key: ValueKey(items[i].id), ...),
+)
 
-```
-Check for:
-- Event-driven: separate Event and State classes
-- Bloc for complex logic, Cubit for simple state changes
-- Sealed classes for events and states (exhaustive switch)
-- BlocProvider scoped to widget subtree (not app-level for everything)
-- BlocListener for side effects (navigation, snackbar)
-- BlocSelector/BlocBuilder with buildWhen for selective rebuilds
-- Equatable for state comparison (proper rebuilds)
-- No UI logic in Bloc — only business logic
-```
+// BAD — build() method > 50 lines with inline logic
+@override
+Widget build(BuildContext context) {
+  final isValid = email.contains('@') && password.length >= 8;
+  // ... 80 more lines of widget nesting
+}
+// GOOD — extract logic to controller/notifier, extract sub-widgets
 
-### 4. Dart Patterns
-
-```
-Check for:
-- Null safety: no unnecessary null assertions (!)
-- Pattern matching (Dart 3): switch expressions, if-case, guard clauses
-- Sealed classes for algebraic data types
-- Extension methods for utility additions (not standalone functions)
-- Mixins for shared behavior (not inheritance hierarchies)
-- Records for lightweight tuples (Dart 3)
-- Named parameters with required for clarity
-- freezed for immutable data classes + union types
-- json_serializable or freezed for JSON serialization (not manual)
-```
-
-### 5. Platform Channels & Native Interop
-
-```
-Check for:
-- MethodChannel for one-off calls, EventChannel for streams
-- Pigeon for type-safe platform channel code generation
-- Error handling on both Dart and native sides
-- Proper codec usage (StandardMessageCodec)
-- Platform checks (Platform.isIOS / Platform.isAndroid / kIsWeb)
-- No heavy computation on platform thread (use Isolates)
-- Federated plugin structure for multi-platform packages
+// BAD — nested ListView/GridView without shrinkWrap or Slivers
+ListView(children: [
+  ListView.builder(...)  // viewport conflict, crash potential
+])
+// GOOD — CustomScrollView with slivers
+CustomScrollView(slivers: [
+  SliverList(...),
+  SliverGrid(...),
+])
 ```
 
-### 6. Project Structure & Tooling
+### 2. State Management — Riverpod (Severity: WARNING-CRITICAL)
+
+```dart
+// BAD — ref.watch in callback (creates subscription but never disposed properly)
+onPressed: () {
+  final user = ref.watch(userProvider);  // BUG: watch in callback
+}
+// GOOD — ref.read in callbacks, ref.watch in build
+onPressed: () {
+  final user = ref.read(userProvider);
+}
+
+// BAD — provider without autoDispose (memory leak for screen-scoped state)
+final detailProvider = NotifierProvider<DetailNotifier, DetailState>(
+  DetailNotifier.new,
+);
+// GOOD — autoDispose for screen-scoped providers
+final detailProvider = NotifierProvider.autoDispose<DetailNotifier, DetailState>(
+  DetailNotifier.new,
+);
+
+// BAD — circular provider dependency
+final aProvider = Provider((ref) => ref.watch(bProvider) + 1);
+final bProvider = Provider((ref) => ref.watch(aProvider) + 1);
+// StackOverflowError at runtime
+
+// BAD — passing ref outside the widget (leaks framework internals)
+void saveUser(WidgetRef ref) {
+  final api = ref.read(apiProvider);
+  // ...
+}
+// GOOD — read the dependency, pass the value
+void saveUser(ApiClient api) {
+  // ...
+}
+
+// BAD — keepAlive without clear lifecycle ownership
+ref.keepAlive();  // who disposes this? when?
+// GOOD — keepAlive with explicit invalidation
+final link = ref.keepAlive();
+timer = Timer(Duration(minutes: 5), link.close);  // auto-expire
+```
+
+### 3. State Management — Bloc (Severity: WARNING)
+
+```dart
+// BAD — Cubit for complex multi-event logic
+class AuthCubit extends Cubit<AuthState> {
+  void login() { ... }
+  void logout() { ... }
+  void refreshToken() { ... }  // getting complex, events not traceable
+}
+// GOOD — Bloc with events for complex flows
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  on<LoginRequested>(_onLogin);
+  on<LogoutRequested>(_onLogout);
+  on<TokenRefreshRequested>(_onRefresh);
+}
+
+// BAD — non-equatable state (BlocBuilder rebuilds every time)
+class UserState {
+  final String name;
+  UserState(this.name);
+}
+// GOOD — Equatable for proper state comparison
+class UserState extends Equatable {
+  final String name;
+  const UserState(this.name);
+  @override
+  List<Object?> get props => [name];
+}
+
+// BAD — BlocProvider at app root for page-scoped bloc
+MaterialApp(
+  child: BlocProvider(create: (_) => SearchBloc(), child: ...),  // lives forever
+)
+// GOOD — scope to the widget subtree that needs it
+Navigator.push(context, MaterialPageRoute(
+  builder: (_) => BlocProvider(create: (_) => SearchBloc(), child: SearchPage()),
+))
+
+// BAD — UI logic in Bloc (navigation, showing dialogs)
+emit(NavigateToHome());  // Bloc should not know about UI
+// GOOD — BlocListener handles side effects
+BlocListener<AuthBloc, AuthState>(
+  listener: (context, state) {
+    if (state is Authenticated) Navigator.pushNamed(context, '/home');
+  },
+)
+```
+
+### 4. Dart Patterns (Severity: WARNING)
+
+```dart
+// BAD — force unwrap without null check (crash at runtime)
+final user = context.read<UserNotifier>().state!;
+// GOOD — handle null explicitly
+final user = context.read<UserNotifier>().state;
+if (user == null) return const LoginPage();
+
+// BAD — manual JSON serialization (error-prone, boilerplate)
+factory User.fromJson(Map<String, dynamic> json) {
+  return User(
+    name: json['name'] as String,      // crash if missing
+    age: json['age'] as int,           // crash if wrong type
+  );
+}
+// GOOD — freezed or json_serializable with code generation
+@freezed
+class User with _$User {
+  const factory User({
+    required String name,
+    required int age,
+  }) = _User;
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+}
+
+// BAD — string comparison for algebraic types
+if (status == 'loading') { ... }
+else if (status == 'error') { ... }
+// GOOD — sealed class + pattern matching (Dart 3)
+sealed class Status {}
+class Loading extends Status {}
+class Error extends Status { final String message; ... }
+class Success extends Status { final Data data; ... }
+
+switch (status) {
+  case Loading(): return CircularProgressIndicator();
+  case Error(:final message): return Text(message);
+  case Success(:final data): return DataView(data);
+}
+
+// BAD — inheritance for code reuse
+class BaseApiService { Future<Response> get(String url) { ... } }
+class UserService extends BaseApiService { ... }
+// GOOD — mixin for shared behavior
+mixin HttpMixin {
+  Future<Response> get(String url) { ... }
+}
+class UserService with HttpMixin { ... }
+```
+
+### 5. BuildContext Async Gap (Severity: CRITICAL)
+
+```dart
+// BAD — using BuildContext after async gap (widget may be unmounted)
+onPressed: () async {
+  await saveData();
+  Navigator.of(context).pop();       // context may be invalid!
+  ScaffoldMessenger.of(context)...   // crash or wrong scaffold
+}
+
+// GOOD — check mounted (StatefulWidget)
+onPressed: () async {
+  await saveData();
+  if (!mounted) return;
+  Navigator.of(context).pop();
+}
+
+// GOOD — capture before async gap (StatelessWidget with Riverpod)
+onPressed: () async {
+  final navigator = Navigator.of(context);
+  await saveData();
+  navigator.pop();  // captured reference is safe
+}
+```
+
+### 6. Platform Channels & Native Interop (Severity: WARNING)
+
+```dart
+// BAD — untyped method channel (runtime type errors)
+final result = await channel.invokeMethod('getUser');
+// GOOD — Pigeon for type-safe codegen
+@HostApi()
+abstract class UserApi {
+  User getUser(String id);
+}
+
+// BAD — heavy computation on main isolate
+void processImage(Uint8List bytes) {
+  // blocks UI for seconds
+  final result = expensiveFilter(bytes);
+}
+// GOOD — compute in isolate
+final result = await Isolate.run(() => expensiveFilter(bytes));
+
+// BAD — missing platform check
+if (Platform.isIOS) { ... }  // crashes on web (Platform not available)
+// GOOD — kIsWeb first, then Platform
+if (kIsWeb) { ... }
+else if (Platform.isIOS) { ... }
+```
+
+### 7. Project Structure & Tooling (Severity: INFO-WARNING)
 
 ```
 Check for:
 - FVM for Flutter version management (.fvmrc committed)
-- Feature-first directory structure (not layer-first)
+- Feature-first directory structure (not layer-first for large apps)
 - GoRouter or auto_route for declarative routing
 - Build flavors/schemes for environment separation (dev/staging/prod)
 - l10n with arb files for internationalization
 - Golden tests for visual regression
 - Integration tests in integration_test/ directory
-- pubspec.yaml: version constraints (^major.minor, not any)
+- pubspec.yaml: version constraints (^major.minor, not 'any')
 - analysis_options.yaml with strict rules enabled
+- dart fix --apply run before review
 ```
+
+## Negative Constraints
+
+These patterns are **always** flagged:
+
+| Pattern | Severity | Exception |
+|---------|----------|-----------|
+| `setState` in complex widgets (>3 fields) | WARNING | Simple toggles, animations |
+| Missing `const` on stateless widget constructor | WARNING | None |
+| `BuildContext` used after `await` | CRITICAL | Only if `mounted` checked |
+| Force unwrap `!` on nullable | WARNING | Only after explicit null check |
+| `ref.watch` in callback/initState | CRITICAL | None — use `ref.read` |
+| Nested `ListView`/`GridView` without slivers | CRITICAL | Only with `shrinkWrap: true` + bounded parent |
+| `GlobalKey` for list items | WARNING | None — use `ValueKey` |
+| Manual JSON without codegen | WARNING | Trivial 1-2 field classes |
+| `print()` in production code | WARNING | None — use logging framework |
+| `dynamic` type in public API | WARNING | Platform channel edge cases |
 
 ## Output Format
 
@@ -163,4 +372,6 @@ Check for:
 - Flag missing `const` constructors on stateless widgets
 - Flag `BuildContext` used across async gaps
 - Flag force unwrap `!` on nullable types without null check
-- Output: **800 tokens max**
+- Flag `ref.watch` in callbacks — always CRITICAL
+- **Check pubspec.yaml for Dart/Flutter version** before suggesting version-specific features
+- Output: **1000 tokens max**
