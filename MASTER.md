@@ -406,3 +406,24 @@ Configurable hooks: `detect-secrets`, `dangerous-commands`, `ds-guard`
 | Think Tool | anthropic.com/engineering/claude-think-tool | Complex tool use reasoning |
 | Writing Tools for Agents | anthropic.com/engineering/writing-tools-for-agents | Agent tool design |
 | Claude Code Best Practices | anthropic.com/engineering/claude-code-best-practices | Coding best practices |
+
+---
+
+## 9. Rule Registry (ADR-0002 S3b′)
+
+`leo skills audit`이 파싱하는 rule-id 레지스트리. 아래 주석 앵커는 규칙 → hook 매핑을 결정론적으로 만든다.
+
+<!-- rule-id: no-secrets --> 시크릿 하드코딩 금지 — `leo secret` 경유 (§6.1)
+<!-- rule-id: no-console-log --> `console.log/debug/info/warn` 금지 — pino 래퍼 (§7.1)
+<!-- rule-id: no-sql-join --> SQL JOIN 금지 — 앱 레벨 머지 (§7.4)
+<!-- rule-id: no-dangerous-commands --> 파괴적 쉘 명령 차단 (§6.2)
+<!-- rule-id: agent-specialization --> generic agent 금지, subagent_type 명시 (§1.7)
+<!-- rule-id: tdd-required --> 테스트 파일 없이 소스 커밋 금지 (§1.6 TDD)
+<!-- rule-id: adr-mandatory --> 아키텍처 결정은 ADR 기록 (§1.6 ADR)
+<!-- rule-id: one-feature-per-session --> 한 세션 = 한 기능 (§2.1)
+<!-- rule-id: claude-config-sync --> `~/.claude/` 사용자 설정은 `leo config`로 git 관리 (ADR-0002 S2′)
+<!-- rule-id: state-backup --> secretary `state.db`는 `leo backup`으로 암호화 Gist 백업 (ADR-0002 S4′)
+<!-- rule-id: encrypted-backup-wrapper --> 암호화는 `leo_sec_*` 공개 래퍼 재사용, 신규 암호화 레이어 금지 (ADR-0002 §결정)
+<!-- rule-id: skills-audit --> `leo skills audit`으로 규칙↔hook 커버리지 주기 점검 (ADR-0002 S3b′)
+<!-- rule-id: state-backup-drill --> 복원 드릴 표준 스크립트 `scripts/backup-drill.sh` (ADR-0002 S4′)
+<!-- rule-id: claude-config-intersection --> `~/.claude/` git 대상 × iCloud sync 경로 intersection = ∅ (ADR-0002 S2′)

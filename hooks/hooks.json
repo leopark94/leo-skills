@@ -50,6 +50,14 @@
         {
           "type": "command",
           "command": "bash ~/utils/leo-skills/hooks/scripts/ds-guard.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/no-console-log.sh"
+        },
+        {
+          "type": "command",
+          "command": "bash ~/utils/leo-skills/hooks/scripts/no-sql-join.sh"
         }
       ]
     },

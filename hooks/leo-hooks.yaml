@@ -24,6 +24,24 @@ detect-secrets:
     block-secret-exports: true
     block-hardcoded-auth-headers: true
 
+no-console-log:
+  enabled: true
+  allowlist:
+    - 'packages/shared/logger/**'
+    - '**/logger*.ts'
+    - '**/*.test.ts'
+    - '**/*.spec.ts'
+    - '**/scripts/**'
+
+no-sql-join:
+  enabled: true
+  allowlist:
+    - '**/migrations/**'
+    - '**/seed/**'
+    - '**/seeds/**'
+    - '**/drizzle/**'
+    - '**/prisma/migrations/**'
+
 protect-files:
   enabled: true
   patterns:
