@@ -1,4 +1,5 @@
 #!/bin/zsh
+# rule-id: agent-specialization
 # agent-guard.sh — PreToolUse(Agent) hook: force custom agent usage + worktree isolation
 # 1. Blocks generic/general-purpose Agent calls
 # 2. Forces isolation: "worktree" on file-modifying agents

@@ -1,4 +1,5 @@
 #!/bin/zsh
+# rule-id: no-dangerous-commands
 # dangerous-command-guard.sh — PreToolUse(Bash) hook: block destructive commands
 # Reads block patterns from .leo-hooks.yaml config (dangerous-commands section)
 # Falls back to hardcoded patterns when no config is available

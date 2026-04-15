@@ -1,4 +1,5 @@
 #!/bin/zsh
+# rule-id: no-secrets
 # detect-secrets.sh — PreToolUse hook: detect secrets in file content
 # Blocks Edit/Write/Bash when API keys, tokens, or credentials are detected
 # Recommends storing via leo secret (leo-cli Keychain)

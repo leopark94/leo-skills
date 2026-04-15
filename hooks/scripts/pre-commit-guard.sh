@@ -1,4 +1,5 @@
 #!/bin/zsh
+# rule-id: tdd-required
 # pre-commit-guard.sh — PreToolUse(Bash) hook: block git commit when review is pending
 # Blocks commit if .claude-needs-review marker exists
 
